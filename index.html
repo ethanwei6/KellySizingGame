@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Probability Betting</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div>
+            <p class="eyebrow">Market Making Games clone</p>
+            <h1>Probability Betting</h1>
+          </div>
+        </div>
+
+        <div class="status-strip" aria-live="polite">
+          <div>
+            <span class="status-label">Bankroll</span>
+            <strong id="bankrollValue">$1,000</strong>
+          </div>
+          <div>
+            <span class="status-label">Round</span>
+            <strong id="roundValue">1 / 6</strong>
+          </div>
+          <div>
+            <span class="status-label">Skill</span>
+            <strong id="skillValue">0.0</strong>
+          </div>
+          <div>
+            <span class="status-label">Clock</span>
+            <strong id="clockValue">Practice</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="table-surface" aria-labelledby="tableTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="phaseLabel">Betting phase</p>
+              <h2 id="tableTitle">Find the mispriced bets</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="resetButton" type="button">Reset</button>
+              <button class="primary-button" id="submitButton" type="button">Submit bets</button>
+            </div>
+          </div>
+
+          <div class="round-summary" id="roundSummary">
+            <div>
+              <span>Total staked</span>
+              <strong id="totalStaked">$0</strong>
+            </div>
+            <div>
+              <span>Available</span>
+              <strong id="availableBankroll">$1,000</strong>
+            </div>
+            <div>
+              <span>Positive edges found</span>
+              <strong id="edgeCount">Hidden</strong>
+            </div>
+          </div>
+
+          <div class="message-line" id="messageLine" role="status"></div>
+
+          <div class="market-grid" id="marketGrid"></div>
+        </section>
+
+        <aside class="side-rail" aria-label="Game controls and analysis">
+          <section class="panel setup-panel" id="setupPanel">
+            <div class="panel-heading">
+              <p class="eyebrow">Setup</p>
+              <h2>Session</h2>
+            </div>
+            <div class="control-row">
+              <label for="roundCount">Rounds</label>
+              <select id="roundCount">
+                <option value="5">5 rounds</option>
+                <option value="6" selected>6 rounds</option>
+                <option value="8">8 rounds</option>
+                <option value="10">10 rounds</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="bankrollStart">Starting bankroll</label>
+              <select id="bankrollStart">
+                <option value="500">$500</option>
+                <option value="1000" selected>$1,000</option>
+                <option value="2500">$2,500</option>
+              </select>
+            </div>
+            <label class="toggle-row">
+              <input id="timedToggle" type="checkbox" />
+              <span>Timed rounds</span>
+            </label>
+            <button class="primary-button full-width" id="startButton" type="button">Start new game</button>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <p class="eyebrow">Score</p>
+              <h2>Breakdown</h2>
+            </div>
+            <div class="score-bars">
+              <div>
+                <div class="bar-label">
+                  <span>Decision quality</span>
+                  <strong id="decisionScore">0 / 50</strong>
+                </div>
+                <div class="meter"><span id="decisionMeter"></span></div>
+              </div>
+              <div>
+                <div class="bar-label">
+                  <span>Kelly sizing</span>
+                  <strong id="sizingScore">0 / 40</strong>
+                </div>
+                <div class="meter"><span id="sizingMeter"></span></div>
+              </div>
+              <div>
+                <div class="bar-label">
+                  <span>Arbitrage bonus</span>
+                  <strong id="arbScore">0 / 10</strong>
+                </div>
+                <div class="meter"><span id="arbMeter"></span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <p class="eyebrow">Field</p>
+              <h2>Leaderboard</h2>
+            </div>
+            <ol class="leaderboard" id="leaderboard"></ol>
+          </section>
+
+          <section class="panel notebook-panel">
+            <div class="panel-heading">
+              <p class="eyebrow">Notebook</p>
+              <h2>Reference</h2>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Probability notebook">
+              <button class="tab is-active" type="button" data-tab="rules">Rules</button>
+              <button class="tab" type="button" data-tab="probability">Probability</button>
+              <button class="tab" type="button" data-tab="examples">Examples</button>
+              <button class="tab" type="button" data-tab="strategy">Strategy</button>
+            </div>
+            <div class="tab-body" id="tabBody"></div>
+          </section>
+        </aside>
+      </main>
+
+      <section class="review-drawer" id="reviewDrawer" aria-labelledby="reviewTitle">
+        <div class="review-heading">
+          <div>
+            <p class="eyebrow">Review phase</p>
+            <h2 id="reviewTitle">Round analysis</h2>
+          </div>
+          <button class="secondary-button" id="clearReviewButton" type="button">Hide review</button>
+        </div>
+        <div id="reviewContent" class="review-content"></div>
+      </section>
+    </div>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
