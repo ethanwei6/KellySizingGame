@@ -18,12 +18,13 @@ http://127.0.0.1:8765/
 
 ## Game Loop
 
-- Each round generates five coin, dice, and card betting markets.
-- Offered odds are quoted above, below, or near fair value.
+- Each round shows three columns: two dice, two cards, and three coins.
+- Each column has two posted markets with only the given payout odds visible before submission.
 - The player chooses which markets to pass or stake.
-- Results reveal outcomes, fair odds, edge, Kelly stake, and P&L.
-- Final scoring combines decision quality, Kelly sizing efficiency, arbitrage bonus, and the round-count bonus.
+- After submission, the dice roll, the cards are drawn, and the coins flip.
+- Results reveal P&L, the correct bet/pass action, and the correct Kelly-sized stake.
+- Final scoring is strictly based on entering the correct markets and sizing them correctly.
 
 ## Source Basis
 
-The implementation follows the public page mechanics: betting phase, results reveal, game end score breakdown, review phase, Kelly criterion sizing, dice/card/coin probability events, and arbitrage bonus behavior.
+The implementation follows the public page mechanics: betting phase, results reveal, game end score breakdown, review phase, Kelly criterion sizing, and dice/card/coin probability events.

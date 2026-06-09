@@ -13,53 +13,23 @@ const els = {
   timedToggle: document.querySelector("#timedToggle"),
   totalStaked: document.querySelector("#totalStaked"),
   availableBankroll: document.querySelector("#availableBankroll"),
+  correctLabel: document.querySelector("#correctLabel"),
   edgeCount: document.querySelector("#edgeCount"),
   messageLine: document.querySelector("#messageLine"),
   marketGrid: document.querySelector("#marketGrid"),
   decisionScore: document.querySelector("#decisionScore"),
   sizingScore: document.querySelector("#sizingScore"),
-  arbScore: document.querySelector("#arbScore"),
   decisionMeter: document.querySelector("#decisionMeter"),
   sizingMeter: document.querySelector("#sizingMeter"),
-  arbMeter: document.querySelector("#arbMeter"),
-  leaderboard: document.querySelector("#leaderboard"),
-  tabBody: document.querySelector("#tabBody"),
   reviewDrawer: document.querySelector("#reviewDrawer"),
   reviewContent: document.querySelector("#reviewContent"),
   clearReviewButton: document.querySelector("#clearReviewButton"),
 };
 
-const EVENT_COUNT = 5;
 const ROUND_SECONDS = 60;
-const EDGE_EPSILON = 0.01;
-
-const notebook = {
-  rules: `
-    <p>Each round offers dice, card, and coin events with quoted profit odds. Stake only when the payout is better than fair value, then size the bet from bankroll.</p>
-    <ul>
-      <li>Positive edge: true probability is higher than the quote implies.</li>
-      <li>Results reveal the outcome, fair odds, edge, and Kelly stake.</li>
-      <li>Skill combines decision quality, sizing efficiency, and arbitrage detection.</li>
-    </ul>
-  `,
-  probability: `
-    <div class="formula">edge = p * payout - (1 - p)</div>
-    <div class="formula">kelly fraction = max(0, (b * p - q) / b)</div>
-    <p>Common fair profit odds: coin heads 1:1, die shows 6 5:1, two dice doubles 5:1, card is ace 12:1, card is red 1:1.</p>
-  `,
-  examples: `
-    <p>If a fair coin pays 1.30:1, each $1 has expected profit 0.50 * 1.30 - 0.50 = $0.15. Kelly stakes 0.15 / 1.30 = 11.5% of bankroll.</p>
-    <p>If a die six pays 4:1, fair probability is 1/6 and expected profit is 1/6 * 4 - 5/6 = -16.7 cents per $1. Skip it.</p>
-  `,
-  strategy: `
-    <ul>
-      <li>Convert payout to implied probability: 1 / (payout + 1).</li>
-      <li>Bet when your true probability is above the implied probability.</li>
-      <li>For several strong edges, keep total risk under bankroll and scale stakes together.</li>
-      <li>Complementary markets can be arbitrage when both sides are quoted too generously.</li>
-    </ul>
-  `,
-};
+const EDGE_EPSILON = 0.005;
+const SUITS = ["hearts", "diamonds", "clubs", "spades"];
+const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
 let state;
 
@@ -77,11 +47,10 @@ function freshState() {
     timed: els.timedToggle.checked,
     timeRemaining: ROUND_SECONDS,
     timerId: null,
-    events: [],
+    board: null,
     bets: {},
     history: [],
     totals: emptyTotals(),
-    aiPlayers: createAiPlayers(bankroll),
   };
 }
 
@@ -91,20 +60,7 @@ function emptyTotals() {
     decisionMax: 0,
     sizing: 0,
     sizingMax: 0,
-    arb: 0,
   };
-}
-
-function createAiPlayers(bankroll) {
-  return [
-    { name: "You", isPlayer: true, bankroll, totals: emptyTotals() },
-    { name: "Kelly Desk", style: "kelly", bankroll, totals: emptyTotals() },
-    { name: "Half Kelly", style: "half", bankroll, totals: emptyTotals() },
-    { name: "Aggressive", style: "aggressive", bankroll, totals: emptyTotals() },
-    { name: "Threshold", style: "threshold", bankroll, totals: emptyTotals() },
-    { name: "Noise Trader", style: "noise", bankroll, totals: emptyTotals() },
-    { name: "Flat Better", style: "flat", bankroll, totals: emptyTotals() },
-  ];
 }
 
 function startGame() {
@@ -120,7 +76,7 @@ function setupRound() {
   state.roundStartBankroll = Math.max(0, state.bankroll);
   state.timeRemaining = ROUND_SECONDS;
   state.bets = {};
-  state.events = createRoundMarkets(state.round);
+  state.board = createRoundBoard();
   showMessage("");
 
   if (state.timed) {
@@ -149,298 +105,205 @@ function clearTimer() {
   }
 }
 
-function createRoundMarkets(roundNumber) {
-  const markets = [];
-  const seen = new Set();
-  const useArbPair = Math.random() < 0.38;
+function createRoundBoard() {
+  const board = {
+    dice: {
+      key: "dice",
+      label: "Two Dice",
+      display: [6, 6],
+      outcome: null,
+      markets: quoteTwoMarkets(diceMarketTemplates),
+    },
+    cards: {
+      key: "cards",
+      label: "Two Cards",
+      display: [null, null],
+      outcome: null,
+      markets: quoteTwoMarkets(cardMarketTemplates),
+    },
+    coins: {
+      key: "coins",
+      label: "Three Coins",
+      display: ["H", "H", "H"],
+      outcome: null,
+      markets: quoteTwoMarkets(coinMarketTemplates),
+    },
+  };
 
-  if (useArbPair) {
-    const pair = makeComplementPair(roundNumber);
-    pair.forEach((market) => {
-      markets.push(market);
-      seen.add(market.title);
+  Object.values(board).forEach((instrument) => {
+    instrument.markets.forEach((market) => {
+      market.instrument = instrument.key;
     });
-  }
+  });
 
-  let attempts = 0;
-  while (markets.length < EVENT_COUNT && attempts < 120) {
-    attempts += 1;
-    const template = sample(marketTemplates);
-    const base = template();
-    if (seen.has(base.title)) continue;
-    markets.push(quoteMarket(base));
-    seen.add(base.title);
-  }
-
-  return shuffle(markets).slice(0, EVENT_COUNT);
+  return board;
 }
 
-function makeComplementPair(roundNumber) {
-  const coin = {
-    value: null,
-    toss() {
-      if (!this.value) this.value = Math.random() < 0.5 ? "Heads" : "Tails";
-      return this.value;
-    },
-  };
-  const group = `arb-coin-${roundNumber}-${Math.random().toString(16).slice(2)}`;
-  const headBase = {
-    category: "Coin",
-    title: "Coin lands heads",
-    description: "One fair coin, one shared toss.",
-    p: 0.5,
-    visual: { type: "coin", label: "H" },
-    arbGroup: group,
-    resolve: () => {
-      const result = coin.toss();
-      return { win: result === "Heads", outcomeText: result };
-    },
-  };
-  const tailBase = {
-    category: "Coin",
-    title: "Coin lands tails",
-    description: "The opposite side of the same shared toss.",
-    p: 0.5,
-    visual: { type: "coin", label: "T" },
-    arbGroup: group,
-    resolve: () => {
-      const result = coin.toss();
-      return { win: result === "Tails", outcomeText: result };
-    },
-  };
+function quoteTwoMarkets(templates) {
+  const picked = shuffle(templates).slice(0, 2);
+  const multipliers = shuffle([
+    sample([1.12, 1.24, 1.38, 1.55]),
+    sample([0.62, 0.78, 0.9, 0.96]),
+  ]);
 
-  return [
-    quoteMarket(headBase, randomBetween(1.14, 1.42)),
-    quoteMarket(tailBase, randomBetween(1.12, 1.4)),
-  ];
+  return picked.map((template, index) => quoteMarket(template(), multipliers[index]));
 }
 
-const marketTemplates = [
+const diceMarketTemplates = [
   () => {
-    const target = randomInt(1, 6);
+    const target = sample([7, 8, 9, 10]);
     return {
-      category: "Dice",
-      title: `Die shows ${target}`,
-      description: "One fair six-sided die.",
-      p: 1 / 6,
-      visual: { type: "die", value: target },
-      resolve: () => {
-        const roll = randomInt(1, 6);
-        return { win: roll === target, outcomeText: `Rolled ${roll}` };
-      },
+      title: `Sum is at least ${target}`,
+      description: "Uses the total of the two dice.",
+      probability: countDiceOutcomes((a, b) => a + b >= target) / 36,
+      settles: ({ dice }) => dice[0] + dice[1] >= target,
     };
   },
   () => {
-    const target = randomInt(3, 6);
+    const target = sample([5, 6, 7, 8]);
     return {
-      category: "Dice",
-      title: `Die is at least ${target}`,
-      description: "One fair six-sided die.",
-      p: (7 - target) / 6,
-      visual: { type: "die", value: target },
-      resolve: () => {
-        const roll = randomInt(1, 6);
-        return { win: roll >= target, outcomeText: `Rolled ${roll}` };
-      },
-    };
-  },
-  () => {
-    const wantsEven = Math.random() < 0.5;
-    return {
-      category: "Dice",
-      title: `Die is ${wantsEven ? "even" : "odd"}`,
-      description: "One fair six-sided die.",
-      p: 0.5,
-      visual: { type: "die", value: wantsEven ? 4 : 5 },
-      resolve: () => {
-        const roll = randomInt(1, 6);
-        const win = wantsEven ? roll % 2 === 0 : roll % 2 === 1;
-        return { win, outcomeText: `Rolled ${roll}` };
-      },
-    };
-  },
-  () => {
-    const target = sample([7, 8, 9, 10, 11]);
-    const wins = countTwoDice((a, b) => a + b >= target);
-    return {
-      category: "Dice",
-      title: `Two dice sum >= ${target}`,
-      description: "Two fair dice rolled together.",
-      p: wins / 36,
-      visual: { type: "die", value: 6 },
-      resolve: () => {
-        const a = randomInt(1, 6);
-        const b = randomInt(1, 6);
-        return {
-          win: a + b >= target,
-          outcomeText: `Rolled ${a} and ${b}; sum ${a + b}`,
-        };
-      },
+      title: `Sum is at most ${target}`,
+      description: "Uses the total of the two dice.",
+      probability: countDiceOutcomes((a, b) => a + b <= target) / 36,
+      settles: ({ dice }) => dice[0] + dice[1] <= target,
     };
   },
   () => ({
-    category: "Dice",
-    title: "Two dice are doubles",
-    description: "Two fair dice rolled together.",
-    p: 1 / 6,
-    visual: { type: "die", value: 2 },
-    resolve: () => {
-      const a = randomInt(1, 6);
-      const b = randomInt(1, 6);
-      return { win: a === b, outcomeText: `Rolled ${a} and ${b}` };
-    },
-  }),
-  () => {
-    const wantsHeads = Math.random() < 0.5;
-    return {
-      category: "Coin",
-      title: `Coin lands ${wantsHeads ? "heads" : "tails"}`,
-      description: "One fair coin toss.",
-      p: 0.5,
-      visual: { type: "coin", label: wantsHeads ? "H" : "T" },
-      resolve: () => {
-        const result = Math.random() < 0.5 ? "Heads" : "Tails";
-        return {
-          win: wantsHeads ? result === "Heads" : result === "Tails",
-          outcomeText: result,
-        };
-      },
-    };
-  },
-  () => ({
-    category: "Coin",
-    title: "Two coins both heads",
-    description: "Two independent fair coin tosses.",
-    p: 0.25,
-    visual: { type: "coin", label: "HH" },
-    resolve: () => {
-      const first = Math.random() < 0.5 ? "H" : "T";
-      const second = Math.random() < 0.5 ? "H" : "T";
-      return {
-        win: first === "H" && second === "H",
-        outcomeText: `${first}${second}`,
-      };
-    },
+    title: "At least one die is 6",
+    description: "Either die may show the six.",
+    probability: countDiceOutcomes((a, b) => a === 6 || b === 6) / 36,
+    settles: ({ dice }) => dice[0] === 6 || dice[1] === 6,
   }),
   () => ({
-    category: "Coin",
-    title: "Exactly two heads in three",
-    description: "Three independent fair coin tosses.",
-    p: 3 / 8,
-    visual: { type: "coin", label: "2H" },
-    resolve: () => {
-      const flips = Array.from({ length: 3 }, () =>
-        Math.random() < 0.5 ? "H" : "T",
-      );
-      const heads = flips.filter((flip) => flip === "H").length;
-      return {
-        win: heads === 2,
-        outcomeText: `${flips.join("")}; ${heads} heads`,
-      };
-    },
+    title: "The dice are doubles",
+    description: "Both dice must show the same number.",
+    probability: countDiceOutcomes((a, b) => a === b) / 36,
+    settles: ({ dice }) => dice[0] === dice[1],
   }),
   () => ({
-    category: "Cards",
-    title: "Card is red",
-    description: "One card drawn from a fresh 52-card deck.",
-    p: 26 / 52,
-    visual: { type: "card", label: "RED", color: "red" },
-    resolve: () => {
-      const card = drawCard();
-      return {
-        win: card.color === "red",
-        outcomeText: card.name,
-      };
-    },
+    title: "The sum is even",
+    description: "The two dice total must be even.",
+    probability: 0.5,
+    settles: ({ dice }) => (dice[0] + dice[1]) % 2 === 0,
   }),
   () => ({
-    category: "Cards",
-    title: "Card is an ace",
-    description: "One card drawn from a fresh 52-card deck.",
-    p: 4 / 52,
-    visual: { type: "card", label: "A" },
-    resolve: () => {
-      const card = drawCard();
-      return {
-        win: card.rank === "A",
-        outcomeText: card.name,
-      };
-    },
-  }),
-  () => ({
-    category: "Cards",
-    title: "Card is a face card",
-    description: "Jack, queen, or king from a fresh deck.",
-    p: 12 / 52,
-    visual: { type: "card", label: "JQK" },
-    resolve: () => {
-      const card = drawCard();
-      return {
-        win: ["J", "Q", "K"].includes(card.rank),
-        outcomeText: card.name,
-      };
-    },
-  }),
-  () => ({
-    category: "Cards",
-    title: "Card is a heart",
-    description: "One card drawn from a fresh 52-card deck.",
-    p: 13 / 52,
-    visual: { type: "card", label: "H", color: "red" },
-    resolve: () => {
-      const card = drawCard();
-      return {
-        win: card.suit === "hearts",
-        outcomeText: card.name,
-      };
-    },
-  }),
-  () => ({
-    category: "Cards",
-    title: "Card is ten or higher",
-    description: "Ten, jack, queen, king, or ace.",
-    p: 20 / 52,
-    visual: { type: "card", label: "10+" },
-    resolve: () => {
-      const card = drawCard();
-      return {
-        win: ["10", "J", "Q", "K", "A"].includes(card.rank),
-        outcomeText: card.name,
-      };
-    },
-  }),
-  () => ({
-    category: "Cards",
-    title: "Card is black queen or king",
-    description: "Queen or king of spades or clubs.",
-    p: 4 / 52,
-    visual: { type: "card", label: "BQK" },
-    resolve: () => {
-      const card = drawCard();
-      return {
-        win:
-          card.color === "black" && (card.rank === "Q" || card.rank === "K"),
-        outcomeText: card.name,
-      };
-    },
+    title: "Both dice are 4 or higher",
+    description: "Each die must be 4, 5, or 6.",
+    probability: countDiceOutcomes((a, b) => a >= 4 && b >= 4) / 36,
+    settles: ({ dice }) => dice[0] >= 4 && dice[1] >= 4,
   }),
 ];
 
-function quoteMarket(base, forcedMultiplier) {
-  const fairB = (1 - base.p) / base.p;
-  const multiplier = forcedMultiplier ?? sample([0.62, 0.76, 0.88, 0.96, 1, 1.08, 1.2, 1.36, 1.58]);
-  const offeredB = roundOdds(Math.max(0.05, fairB * multiplier));
-  const edge = base.p * offeredB - (1 - base.p);
-  const kellyFrac = Math.max(0, edge / offeredB);
+const cardMarketTemplates = [
+  () => ({
+    title: "At least one card is an ace",
+    description: "Two cards are drawn without replacement.",
+    probability: cardProbability((cards) => cards.some((card) => card.rank === "A")),
+    settles: ({ cards }) => cards.some((card) => card.rank === "A"),
+  }),
+  () => ({
+    title: "Both cards are red",
+    description: "Hearts and diamonds count as red.",
+    probability: cardProbability((cards) => cards.every((card) => card.color === "red")),
+    settles: ({ cards }) => cards.every((card) => card.color === "red"),
+  }),
+  () => ({
+    title: "Exactly one card is red",
+    description: "One red card and one black card.",
+    probability: cardProbability(
+      (cards) => cards.filter((card) => card.color === "red").length === 1,
+    ),
+    settles: ({ cards }) => cards.filter((card) => card.color === "red").length === 1,
+  }),
+  () => ({
+    title: "At least one face card",
+    description: "Jack, queen, or king appears.",
+    probability: cardProbability((cards) =>
+      cards.some((card) => ["J", "Q", "K"].includes(card.rank)),
+    ),
+    settles: ({ cards }) => cards.some((card) => ["J", "Q", "K"].includes(card.rank)),
+  }),
+  () => ({
+    title: "The two cards pair",
+    description: "Both cards have the same rank.",
+    probability: cardProbability((cards) => cards[0].rank === cards[1].rank),
+    settles: ({ cards }) => cards[0].rank === cards[1].rank,
+  }),
+  () => ({
+    title: "Both cards are 10 or higher",
+    description: "Ten, jack, queen, king, or ace.",
+    probability: cardProbability((cards) =>
+      cards.every((card) => ["10", "J", "Q", "K", "A"].includes(card.rank)),
+    ),
+    settles: ({ cards }) =>
+      cards.every((card) => ["10", "J", "Q", "K", "A"].includes(card.rank)),
+  }),
+  () => ({
+    title: "At least one heart",
+    description: "One or both cards are hearts.",
+    probability: cardProbability((cards) => cards.some((card) => card.suit === "hearts")),
+    settles: ({ cards }) => cards.some((card) => card.suit === "hearts"),
+  }),
+];
+
+const coinMarketTemplates = [
+  () => ({
+    title: "Exactly two heads",
+    description: "Three fair coins are flipped.",
+    probability: coinProbability((coins) => countHeads(coins) === 2),
+    settles: ({ coins }) => countHeads(coins) === 2,
+  }),
+  () => ({
+    title: "At least two heads",
+    description: "Two or three coins land heads.",
+    probability: coinProbability((coins) => countHeads(coins) >= 2),
+    settles: ({ coins }) => countHeads(coins) >= 2,
+  }),
+  () => ({
+    title: "All three heads",
+    description: "Every coin must land heads.",
+    probability: coinProbability((coins) => countHeads(coins) === 3),
+    settles: ({ coins }) => countHeads(coins) === 3,
+  }),
+  () => ({
+    title: "At least one tail",
+    description: "Any coin may land tails.",
+    probability: coinProbability((coins) => coins.includes("T")),
+    settles: ({ coins }) => coins.includes("T"),
+  }),
+  () => ({
+    title: "Exactly one head",
+    description: "Only one of the three coins lands heads.",
+    probability: coinProbability((coins) => countHeads(coins) === 1),
+    settles: ({ coins }) => countHeads(coins) === 1,
+  }),
+  () => ({
+    title: "All coins match",
+    description: "HHH or TTT wins.",
+    probability: coinProbability((coins) => new Set(coins).size === 1),
+    settles: ({ coins }) => new Set(coins).size === 1,
+  }),
+  () => ({
+    title: "More tails than heads",
+    description: "Two or three coins land tails.",
+    probability: coinProbability((coins) => countHeads(coins) <= 1),
+    settles: ({ coins }) => countHeads(coins) <= 1,
+  }),
+];
+
+function quoteMarket(base, multiplier) {
+  const fairOdds = (1 - base.probability) / base.probability;
+  const offeredOdds = roundOdds(Math.max(0.05, fairOdds * multiplier));
+  const edge = base.probability * offeredOdds - (1 - base.probability);
+  const kellyFraction = Math.max(0, edge / offeredOdds);
 
   return {
     ...base,
     id: `m-${Math.random().toString(16).slice(2)}`,
-    fairB,
-    offeredB,
-    impliedP: 1 / (offeredB + 1),
+    fairOdds,
+    offeredOdds,
     edge,
-    kellyFrac,
+    kellyFraction,
   };
 }
 
@@ -455,110 +318,68 @@ function submitRound() {
   clearTimer();
   showMessage("");
 
-  const aiRoundBets = state.aiPlayers
-    .filter((player) => !player.isPlayer)
-    .map((player) => ({
-      player,
-      bets: chooseAiBets(player, state.events),
-      startBankroll: player.bankroll,
-    }));
+  const outcomes = runSimulation();
+  state.board.dice.display = outcomes.dice;
+  state.board.cards.display = outcomes.cards;
+  state.board.coins.display = outcomes.coins;
+  state.board.dice.outcome = outcomes.dice;
+  state.board.cards.outcome = outcomes.cards;
+  state.board.coins.outcome = outcomes.coins;
 
-  const results = state.events.map((market) => {
-    const outcome = market.resolve();
+  const markets = allMarkets();
+  const results = markets.map((market) => {
+    const won = market.settles(outcomes);
     const stake = getBet(market.id);
-    const pnl = stake > 0 ? (outcome.win ? stake * market.offeredB : -stake) : 0;
-    const analysis = analyzeStake(market, stake, state.roundStartBankroll);
+    const pnl = stake > 0 ? (won ? stake * market.offeredOdds : -stake) : 0;
+    const analysis = analyzeStake(market, stake, state.roundStartBankroll, markets);
 
     return {
       market,
-      outcome,
+      won,
       stake,
       pnl,
       analysis,
     };
   });
 
-  const playerPnl = results.reduce((sum, result) => sum + result.pnl, 0);
-  state.bankroll = Math.max(0, state.bankroll + playerPnl);
-  state.aiPlayers[0].bankroll = state.bankroll;
-
-  applyRoundScores(state.totals, results, state.bets, state.roundStartBankroll);
-  applyArbitrageScore(state.totals, results, state.bets);
-
-  aiRoundBets.forEach(({ player, bets, startBankroll }) => {
-    const pnl = results.reduce((sum, result) => {
-      const stake = bets[result.market.id] || 0;
-      return sum + (stake > 0 ? (result.outcome.win ? stake * result.market.offeredB : -stake) : 0);
-    }, 0);
-    player.bankroll = Math.max(0, player.bankroll + pnl);
-    applyRoundScores(player.totals, results, bets, startBankroll);
-    applyArbitrageScore(player.totals, results, bets);
-  });
+  const roundPnl = results.reduce((sum, result) => sum + result.pnl, 0);
+  state.bankroll = Math.max(0, state.bankroll + roundPnl);
+  applyRoundScores(state.totals, results, state.roundStartBankroll, markets);
 
   state.history.push({
     round: state.round,
     startBankroll: state.roundStartBankroll,
     endBankroll: state.bankroll,
-    pnl: playerPnl,
+    pnl: roundPnl,
+    outcomes,
     results,
   });
 
   state.phase = state.round >= state.totalRounds ? "final" : "results";
-  render();
-
   if (state.phase === "final") {
     els.reviewDrawer.classList.add("is-open");
     renderReview();
   }
+  render();
 }
 
 function nextRound() {
-  if (state.phase === "results") {
-    state.round += 1;
-    setupRound();
-  }
+  if (state.phase !== "results") return;
+  state.round += 1;
+  setupRound();
 }
 
-function chooseAiBets(player, markets) {
-  const bets = {};
-  const bankroll = Math.max(0, player.bankroll);
-
-  markets.forEach((market) => {
-    const optimal = market.kellyFrac * bankroll;
-    let stake = 0;
-
-    if (player.style === "kelly") {
-      stake = optimal;
-    } else if (player.style === "half") {
-      stake = optimal * 0.5;
-    } else if (player.style === "aggressive") {
-      stake = market.edge > 0 ? optimal * 1.45 : randomChance(0.12) ? bankroll * 0.04 : 0;
-    } else if (player.style === "threshold") {
-      stake = market.edge > 0.08 ? optimal * 0.8 : 0;
-    } else if (player.style === "noise") {
-      stake = randomChance(market.edge > 0 ? 0.7 : 0.22) ? bankroll * randomBetween(0.02, 0.12) : 0;
-    } else if (player.style === "flat") {
-      stake = market.edge > 0 ? Math.min(75, bankroll * 0.08) : 0;
-    }
-
-    bets[market.id] = Math.max(0, Math.round(stake));
-  });
-
-  const total = Object.values(bets).reduce((sum, stake) => sum + stake, 0);
-  if (total > bankroll && total > 0) {
-    const scale = bankroll / total;
-    Object.keys(bets).forEach((id) => {
-      bets[id] = Math.floor(bets[id] * scale);
-    });
-  }
-
-  return bets;
+function runSimulation() {
+  return {
+    dice: [randomInt(1, 6), randomInt(1, 6)],
+    cards: drawCards(2),
+    coins: Array.from({ length: 3 }, () => (Math.random() < 0.5 ? "H" : "T")),
+  };
 }
 
-function applyRoundScores(totals, results, betMap, bankrollBase) {
+function applyRoundScores(totals, results, bankrollBase, markets) {
   results.forEach((result) => {
-    const stake = betMap[result.market.id] || 0;
-    const analysis = analyzeStake(result.market, stake, bankrollBase);
+    const analysis = analyzeStake(result.market, result.stake, bankrollBase, markets);
     totals.decision += analysis.decisionScore;
     totals.decisionMax += 1;
     totals.sizing += analysis.sizingScore;
@@ -566,106 +387,74 @@ function applyRoundScores(totals, results, betMap, bankrollBase) {
   });
 }
 
-function applyArbitrageScore(totals, results, betMap) {
-  const groups = new Map();
-  results.forEach((result) => {
-    if (!result.market.arbGroup) return;
-    if (!groups.has(result.market.arbGroup)) groups.set(result.market.arbGroup, []);
-    groups.get(result.market.arbGroup).push(result);
-  });
-
-  groups.forEach((groupResults) => {
-    if (groupResults.length < 2) return;
-    const impliedSum = groupResults.reduce(
-      (sum, result) => sum + result.market.impliedP,
-      0,
-    );
-    const betAllSides = groupResults.every(
-      (result) => (betMap[result.market.id] || 0) > 0,
-    );
-
-    if (impliedSum < 1 && betAllSides) {
-      totals.arb += 2;
-    }
-  });
-}
-
-function analyzeStake(market, stake, bankrollBase) {
-  const optimalStake = market.kellyFrac * bankrollBase;
-  const isPositive = market.edge > EDGE_EPSILON;
-  const isNegative = market.edge < -EDGE_EPSILON;
-  let decisionScore = 0;
-
-  if (!isPositive && !isNegative) {
-    decisionScore = stake === 0 ? 1 : 0.5;
-  } else if (isPositive) {
-    decisionScore = stake > 0 ? 1 : 0;
-  } else {
-    decisionScore = stake === 0 ? 1 : 0;
-  }
-
-  const scale = Math.max(optimalStake, bankrollBase * 0.05, 1);
-  const sizingScore = clamp(1 - Math.abs(stake - optimalStake) / scale, 0, 1);
+function analyzeStake(market, stake, bankrollBase, markets) {
+  const optimalStake = getOptimalStake(market, bankrollBase, markets);
+  const shouldBet = optimalStake > 0;
+  const didBet = stake > 0;
+  const decisionScore = shouldBet === didBet ? 1 : 0;
+  const denominator = Math.max(optimalStake, bankrollBase * 0.05, 1);
+  const sizingScore = clamp(1 - Math.abs(stake - optimalStake) / denominator, 0, 1);
 
   return {
     decisionScore,
     sizingScore,
     optimalStake,
+    shouldBet,
   };
+}
+
+function getOptimalStake(market, bankrollBase, markets) {
+  if (market.kellyFraction <= 0) return 0;
+
+  const rawPositiveTotal = markets.reduce((sum, item) => {
+    return sum + Math.max(0, item.kellyFraction * bankrollBase);
+  }, 0);
+  const scale = rawPositiveTotal > bankrollBase ? bankrollBase / rawPositiveTotal : 1;
+
+  return market.kellyFraction * bankrollBase * scale;
 }
 
 function getScoreParts(totals) {
-  const decision = totals.decisionMax ? (totals.decision / totals.decisionMax) * 50 : 0;
+  const decision = totals.decisionMax ? (totals.decision / totals.decisionMax) * 60 : 0;
   const sizing = totals.sizingMax ? (totals.sizing / totals.sizingMax) * 40 : 0;
-  const arb = Math.min(10, totals.arb);
   return {
     decision,
     sizing,
-    arb,
-    total: decision + sizing + arb,
+    total: decision + sizing,
   };
-}
-
-function getRoundBonus(totalRounds) {
-  if (totalRounds >= 9) return 1.5;
-  if (totalRounds >= 7) return 1;
-  if (totalRounds >= 5) return 0.5;
-  return 0;
 }
 
 function render() {
   renderStatus();
   renderScore();
-  renderLeaderboard();
+  updateRoundStats();
 
   if (state.phase === "betting") {
     els.phaseLabel.textContent = "Betting phase";
-    els.tableTitle.textContent = "Find the mispriced bets";
+    els.tableTitle.textContent = "Choose which posted payouts are worth betting";
     els.submitButton.textContent = "Submit bets";
     els.submitButton.disabled = state.bankroll <= 0;
+    els.correctLabel.textContent = "Correct entries";
     els.edgeCount.textContent = "Hidden";
-    renderMarkets();
-    updateRoundStats();
+    renderBoard();
     return;
   }
 
   if (state.phase === "results") {
     els.phaseLabel.textContent = "Results reveal";
-    els.tableTitle.textContent = "Fair odds and outcomes";
+    els.tableTitle.textContent = "Simulation results and correct sizing";
     els.submitButton.textContent = "Next round";
     els.submitButton.disabled = false;
-    els.edgeCount.textContent = String(state.events.filter((market) => market.edge > EDGE_EPSILON).length);
-    renderMarkets(state.history[state.history.length - 1].results);
-    updateRoundStats();
+    renderCorrectEntryCount();
+    renderBoard(state.history[state.history.length - 1].results);
     return;
   }
 
   els.phaseLabel.textContent = "Game end";
-  els.tableTitle.textContent = "Skill score breakdown";
+  els.tableTitle.textContent = "Final score";
   els.submitButton.textContent = "New game";
   els.submitButton.disabled = false;
-  els.edgeCount.textContent = "Complete";
-  updateRoundStats();
+  renderCorrectEntryCount();
   renderFinalSummary();
 }
 
@@ -681,148 +470,161 @@ function renderStatus() {
 function renderScore() {
   if (!state) return;
   const parts = getScoreParts(state.totals);
-  els.decisionScore.textContent = `${parts.decision.toFixed(1)} / 50`;
+  els.decisionScore.textContent = `${parts.decision.toFixed(1)} / 60`;
   els.sizingScore.textContent = `${parts.sizing.toFixed(1)} / 40`;
-  els.arbScore.textContent = `${parts.arb.toFixed(1)} / 10`;
-  els.decisionMeter.style.width = `${(parts.decision / 50) * 100}%`;
+  els.decisionMeter.style.width = `${(parts.decision / 60) * 100}%`;
   els.sizingMeter.style.width = `${(parts.sizing / 40) * 100}%`;
-  els.arbMeter.style.width = `${(parts.arb / 10) * 100}%`;
 }
 
-function renderLeaderboard() {
-  if (!state) return;
-  const rows = state.aiPlayers
-    .map((player) => {
-      const score = player.isPlayer ? getScoreParts(state.totals) : getScoreParts(player.totals);
-      return {
-        name: player.name,
-        bankroll: player.isPlayer ? state.bankroll : player.bankroll,
-        score: score.total,
-        isPlayer: player.isPlayer,
-      };
-    })
-    .sort((a, b) => b.score - a.score || b.bankroll - a.bankroll);
-
-  els.leaderboard.innerHTML = rows
-    .map(
-      (row) => `
-        <li>
-          <div class="leader-row">
-            <span>${row.isPlayer ? "You" : row.name}</span>
-            <strong>${row.score.toFixed(1)}</strong>
-          </div>
-          <div class="analysis-line">${formatMoney(row.bankroll)}</div>
-        </li>
-      `,
-    )
-    .join("");
+function renderCorrectEntryCount() {
+  const latest = state.history[state.history.length - 1];
+  if (!latest) {
+    els.edgeCount.textContent = "Hidden";
+    return;
+  }
+  const correct = latest.results.filter((result) => result.analysis.decisionScore === 1).length;
+  els.correctLabel.textContent = "Correct entries";
+  els.edgeCount.textContent = `${correct} / ${latest.results.length}`;
 }
 
-function renderMarkets(results = null) {
+function renderBoard(results = null) {
   const resultMap = new Map((results || []).map((result) => [result.market.id, result]));
-  els.marketGrid.innerHTML = state.events
-    .map((market) => renderMarketCard(market, resultMap.get(market.id)))
+  els.marketGrid.innerHTML = Object.values(state.board)
+    .map((instrument) => renderInstrumentColumn(instrument, resultMap))
     .join("");
 }
 
-function renderMarketCard(market, result) {
-  const edgeClass = market.edge > EDGE_EPSILON ? "good" : market.edge < -EDGE_EPSILON ? "bad" : "fair";
-  const isResolved = Boolean(result);
-  const stake = result ? result.stake : getBet(market.id);
-  const maxBet = Math.floor(Math.max(0, state.bankroll));
-  const edgeText = market.edge > EDGE_EPSILON ? "Positive edge" : market.edge < -EDGE_EPSILON ? "Negative edge" : "Near fair";
-  const edgePillClass = market.edge > EDGE_EPSILON ? "positive" : market.edge < -EDGE_EPSILON ? "negative" : "neutral";
-
+function renderInstrumentColumn(instrument, resultMap) {
   return `
-    <article class="market-card ${isResolved ? edgeClass : ""}">
-      <div class="market-visual" aria-hidden="true">
-        ${renderVisual(market.visual)}
+    <article class="instrument-column">
+      <div class="instrument-head">
+        <p class="eyebrow">${instrument.label}</p>
+        <div class="asset-row ${instrument.key}">
+          ${renderInstrumentAssets(instrument)}
+        </div>
+        ${renderOutcomeLine(instrument)}
       </div>
-      <div class="market-body">
-        <div class="market-title-row">
-          <h3>${market.title}</h3>
-          ${
-            isResolved
-              ? `<span class="edge-pill ${edgePillClass}">${edgeText}</span>`
-              : `<span class="tag">${market.category}</span>`
-          }
-        </div>
-        <p class="market-copy">${market.description}</p>
-      </div>
-      <div class="quote-box">
-        <div>
-          <span>${isResolved ? "Fair odds" : "Quoted payout"}</span>
-          <strong>${formatOdds(isResolved ? market.fairB : market.offeredB)}</strong>
-        </div>
-        <div>
-          <span>${isResolved ? "Kelly stake" : "Implied prob"}</span>
-          <strong>${isResolved ? formatMoney(result.analysis.optimalStake) : formatPercent(market.impliedP)}</strong>
-        </div>
-      </div>
-      <div class="bet-controls">
-        <div class="bet-line">
-          <input
-            type="range"
-            min="0"
-            max="${maxBet}"
-            step="5"
-            value="${stake}"
-            data-market-id="${market.id}"
-            data-stake-input="range"
-            ${isResolved ? "disabled" : ""}
-            aria-label="Stake for ${market.title}"
-          />
-          <input
-            type="number"
-            min="0"
-            max="${maxBet}"
-            step="5"
-            value="${stake}"
-            data-market-id="${market.id}"
-            data-stake-input="number"
-            ${isResolved ? "disabled" : ""}
-            aria-label="Stake amount for ${market.title}"
-          />
-        </div>
-        ${
-          isResolved
-            ? renderResultStrip(result)
-            : `
-              <div class="quick-stakes">
-                <button class="small-button" type="button" data-market-id="${market.id}" data-quick-stake="0">Pass</button>
-                <button class="small-button" type="button" data-market-id="${market.id}" data-quick-stake="25">$25</button>
-                <button class="small-button" type="button" data-market-id="${market.id}" data-quick-stake="100">$100</button>
-                <button class="small-button" type="button" data-market-id="${market.id}" data-quick-stake="250">$250</button>
-              </div>
-            `
-        }
+      <div class="market-list">
+        ${instrument.markets.map((market) => renderMarket(market, resultMap.get(market.id))).join("")}
       </div>
     </article>
   `;
 }
 
-function renderResultStrip(result) {
-  if (result.stake <= 0) {
-    return `
-      <div class="result-strip skip">
-        Skipped. Outcome: ${result.outcome.outcomeText}. Edge ${formatSignedPercent(result.market.edge)}.
-      </div>
-    `;
+function renderInstrumentAssets(instrument) {
+  if (instrument.key === "dice") {
+    return instrument.display.map((value) => renderDie(value)).join("");
   }
 
-  const className = result.outcome.win ? "win" : "loss";
-  const pnlText = result.pnl >= 0 ? `+${formatMoney(result.pnl)}` : `-${formatMoney(Math.abs(result.pnl))}`;
+  if (instrument.key === "cards") {
+    return instrument.display.map((card) => renderCard(card)).join("");
+  }
+
+  return instrument.display.map((coin) => `<div class="asset-coin">${coin}</div>`).join("");
+}
+
+function renderOutcomeLine(instrument) {
+  if (state.phase === "betting") {
+    return `<p class="outcome-line">Payout odds are profit per $1 staked.</p>`;
+  }
+
+  if (instrument.key === "dice") {
+    const total = instrument.display[0] + instrument.display[1];
+    return `<p class="outcome-line">Rolled ${instrument.display.join(" and ")}; sum ${total}</p>`;
+  }
+
+  if (instrument.key === "cards") {
+    return `<p class="outcome-line">${instrument.display.map((card) => card.name).join(" and ")}</p>`;
+  }
+
+  return `<p class="outcome-line">Flipped ${instrument.display.join("")}; ${countHeads(instrument.display)} heads</p>`;
+}
+
+function renderMarket(market, result) {
+  const stake = result ? result.stake : getBet(market.id);
+  const maxBet = Math.floor(Math.max(0, state.bankroll));
+
   return `
-    <div class="result-strip ${className}">
-      ${result.outcome.win ? "Won" : "Lost"} ${formatMoney(result.stake)}. P&L ${pnlText}. Outcome: ${result.outcome.outcomeText}. Edge ${formatSignedPercent(result.market.edge)}.
+    <section class="market-card ${result ? getResultClass(result) : ""}">
+      <div class="market-title-row">
+        <div>
+          <h3>${market.title}</h3>
+          <p>${market.description}</p>
+        </div>
+        ${result ? renderActionPill(result.analysis.shouldBet) : ""}
+      </div>
+      <div class="quote-box">
+        <span>Given payout odds</span>
+        <strong>${formatOdds(market.offeredOdds)}</strong>
+      </div>
+      <div class="bet-line">
+        <input
+          type="range"
+          min="0"
+          max="${maxBet}"
+          step="5"
+          value="${stake}"
+          data-market-id="${market.id}"
+          data-stake-input="range"
+          ${result ? "disabled" : ""}
+          aria-label="Stake for ${market.title}"
+        />
+        <input
+          type="number"
+          min="0"
+          max="${maxBet}"
+          step="5"
+          value="${stake}"
+          data-market-id="${market.id}"
+          data-stake-input="number"
+          ${result ? "disabled" : ""}
+          aria-label="Stake amount for ${market.title}"
+        />
+      </div>
+      ${
+        result
+          ? renderResultStrip(result)
+          : `
+            <div class="quick-stakes">
+              <button class="small-button" type="button" data-market-id="${market.id}" data-quick-stake="0">Pass</button>
+              <button class="small-button" type="button" data-market-id="${market.id}" data-quick-stake="25">$25</button>
+              <button class="small-button" type="button" data-market-id="${market.id}" data-quick-stake="100">$100</button>
+              <button class="small-button" type="button" data-market-id="${market.id}" data-quick-stake="250">$250</button>
+            </div>
+          `
+      }
+    </section>
+  `;
+}
+
+function renderActionPill(shouldBet) {
+  return `<span class="action-pill ${shouldBet ? "bet" : "pass"}">${shouldBet ? "Bet" : "Pass"}</span>`;
+}
+
+function renderResultStrip(result) {
+  const pnlText = result.pnl >= 0 ? `+${formatMoney(result.pnl)}` : `-${formatMoney(Math.abs(result.pnl))}`;
+  const edgeText = result.market.edge >= 0 ? `+${formatMoneyCents(result.market.edge)}` : `-${formatMoneyCents(Math.abs(result.market.edge))}`;
+
+  return `
+    <div class="result-strip">
+      <div>
+        <span>Outcome</span>
+        <strong>${result.won ? "Won" : "Lost"} (${pnlText})</strong>
+      </div>
+      <div>
+        <span>Correct stake</span>
+        <strong>${formatMoney(result.analysis.optimalStake)}</strong>
+      </div>
+      <div>
+        <span>Expected profit per $1</span>
+        <strong>${edgeText}</strong>
+      </div>
     </div>
   `;
 }
 
 function renderFinalSummary() {
   const score = getScoreParts(state.totals);
-  const bonus = getRoundBonus(state.totalRounds);
-  const totalWithBonus = score.total + bonus;
   const pnl = state.bankroll - state.startingBankroll;
   const pnlText = pnl >= 0 ? `+${formatMoney(pnl)}` : `-${formatMoney(Math.abs(pnl))}`;
 
@@ -830,8 +632,8 @@ function renderFinalSummary() {
     <div class="empty-state">
       <div>
         <p class="eyebrow">Final score</p>
-        <h2>${totalWithBonus.toFixed(1)} leaderboard points</h2>
-        <p>Base skill ${score.total.toFixed(1)} plus ${bonus.toFixed(1)} round bonus. Final bankroll ${formatMoney(state.bankroll)} (${pnlText}).</p>
+        <h2>${score.total.toFixed(1)} / 100</h2>
+        <p>Correct markets: ${score.decision.toFixed(1)} / 60. Kelly sizing: ${score.sizing.toFixed(1)} / 40. Final bankroll ${formatMoney(state.bankroll)} (${pnlText}).</p>
         <button class="primary-button" type="button" data-show-review="true">Show round review</button>
       </div>
     </div>
@@ -850,12 +652,12 @@ function renderReview() {
         .map(
           (result) => `
             <tr>
+              <td>${getInstrumentName(result.market.instrument)}</td>
               <td>${result.market.title}</td>
-              <td>${formatPercent(result.market.p)}<br><span class="analysis-line">${formatOdds(result.market.fairB)} fair</span></td>
-              <td>${formatOdds(result.market.offeredB)}<br><span class="analysis-line">${formatSignedPercent(result.market.edge)} edge</span></td>
-              <td>${formatMoney(result.stake)}<br><span class="analysis-line">Kelly ${formatMoney(result.analysis.optimalStake)}</span></td>
-              <td>${result.outcome.outcomeText}<br><span class="analysis-line">${result.outcome.win ? "Event won" : "Event lost"}</span></td>
-              <td>${result.pnl >= 0 ? "+" : "-"}${formatMoney(Math.abs(result.pnl))}</td>
+              <td>${formatOdds(result.market.offeredOdds)}</td>
+              <td>${result.analysis.shouldBet ? "Bet" : "Pass"}</td>
+              <td>${formatMoney(result.stake)}<br><span class="analysis-line">Correct ${formatMoney(result.analysis.optimalStake)}</span></td>
+              <td>${result.won ? "Won" : "Lost"}<br><span class="analysis-line">${result.pnl >= 0 ? "+" : "-"}${formatMoney(Math.abs(result.pnl))}</span></td>
             </tr>
           `,
         )
@@ -867,12 +669,12 @@ function renderReview() {
           <table class="review-table">
             <thead>
               <tr>
+                <th>Object</th>
                 <th>Market</th>
-                <th>Fair probability</th>
-                <th>Quote</th>
+                <th>Given odds</th>
+                <th>Correct action</th>
                 <th>Your stake</th>
-                <th>Outcome</th>
-                <th>P&L</th>
+                <th>Result</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -883,23 +685,39 @@ function renderReview() {
     .join("");
 }
 
-function renderVisual(visual) {
-  if (visual.type === "die") return renderDie(visual.value);
-  if (visual.type === "coin") return `<div class="asset-coin">${visual.label}</div>`;
-  if (visual.type === "card") {
-    return `<div class="asset-card ${visual.color === "red" ? "red" : ""}">${visual.label}</div>`;
-  }
-  return "";
-}
-
 function renderDie(value) {
   const positions = {
     1: [[2, 2]],
-    2: [[1, 1], [3, 3]],
-    3: [[1, 1], [2, 2], [3, 3]],
-    4: [[1, 1], [1, 3], [3, 1], [3, 3]],
-    5: [[1, 1], [1, 3], [2, 2], [3, 1], [3, 3]],
-    6: [[1, 1], [1, 3], [2, 1], [2, 3], [3, 1], [3, 3]],
+    2: [
+      [1, 1],
+      [3, 3],
+    ],
+    3: [
+      [1, 1],
+      [2, 2],
+      [3, 3],
+    ],
+    4: [
+      [1, 1],
+      [1, 3],
+      [3, 1],
+      [3, 3],
+    ],
+    5: [
+      [1, 1],
+      [1, 3],
+      [2, 2],
+      [3, 1],
+      [3, 3],
+    ],
+    6: [
+      [1, 1],
+      [1, 3],
+      [2, 1],
+      [2, 3],
+      [3, 1],
+      [3, 3],
+    ],
   };
 
   return `
@@ -911,14 +729,34 @@ function renderDie(value) {
   `;
 }
 
+function renderCard(card) {
+  if (!card) {
+    return `<div class="asset-card face-down" aria-label="Face-down card"></div>`;
+  }
+
+  return `
+    <div class="asset-card ${card.color === "red" ? "red" : ""}">
+      <span>${card.rank}</span>
+      <small>${card.symbol}</small>
+    </div>
+  `;
+}
+
+function getResultClass(result) {
+  if (result.analysis.shouldBet && result.stake > 0) return "correct";
+  if (!result.analysis.shouldBet && result.stake === 0) return "correct";
+  return "incorrect";
+}
+
 function setStake(id, value) {
-  const cleaned = Math.max(0, Math.min(Math.floor(Number(value) || 0), Math.floor(Math.max(0, state.bankroll))));
+  const cleaned = Math.max(
+    0,
+    Math.min(Math.floor(Number(value) || 0), Math.floor(Math.max(0, state.bankroll))),
+  );
   state.bets[id] = cleaned;
-  document
-    .querySelectorAll(`[data-market-id="${id}"][data-stake-input]`)
-    .forEach((input) => {
-      input.value = String(cleaned);
-    });
+  document.querySelectorAll(`[data-market-id="${id}"][data-stake-input]`).forEach((input) => {
+    input.value = String(cleaned);
+  });
   updateRoundStats();
 }
 
@@ -943,21 +781,37 @@ function showMessage(message) {
   els.messageLine.textContent = message;
 }
 
-function drawCard() {
-  const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-  const suits = ["hearts", "diamonds", "clubs", "spades"];
-  const rank = sample(ranks);
-  const suit = sample(suits);
-  const color = suit === "hearts" || suit === "diamonds" ? "red" : "black";
-  return {
-    rank,
-    suit,
-    color,
-    name: `${rank} of ${suit}`,
-  };
+function allMarkets() {
+  return Object.values(state.board).flatMap((instrument) => instrument.markets);
 }
 
-function countTwoDice(predicate) {
+function drawCards(count) {
+  const deck = createDeck();
+  const cards = [];
+  for (let i = 0; i < count; i += 1) {
+    const index = randomInt(0, deck.length - 1);
+    cards.push(deck.splice(index, 1)[0]);
+  }
+  return cards;
+}
+
+function createDeck() {
+  return SUITS.flatMap((suit) =>
+    RANKS.map((rank) => {
+      const color = suit === "hearts" || suit === "diamonds" ? "red" : "black";
+      const symbol = { hearts: "H", diamonds: "D", clubs: "C", spades: "S" }[suit];
+      return {
+        rank,
+        suit,
+        color,
+        symbol,
+        name: `${rank}${symbol}`,
+      };
+    }),
+  );
+}
+
+function countDiceOutcomes(predicate) {
   let count = 0;
   for (let a = 1; a <= 6; a += 1) {
     for (let b = 1; b <= 6; b += 1) {
@@ -967,22 +821,54 @@ function countTwoDice(predicate) {
   return count;
 }
 
+function cardProbability(predicate) {
+  const deck = createDeck();
+  let wins = 0;
+  let total = 0;
+  for (let i = 0; i < deck.length; i += 1) {
+    for (let j = i + 1; j < deck.length; j += 1) {
+      total += 1;
+      if (predicate([deck[i], deck[j]])) wins += 1;
+    }
+  }
+  return wins / total;
+}
+
+function coinProbability(predicate) {
+  const outcomes = [];
+  ["H", "T"].forEach((a) => {
+    ["H", "T"].forEach((b) => {
+      ["H", "T"].forEach((c) => {
+        outcomes.push([a, b, c]);
+      });
+    });
+  });
+  return outcomes.filter(predicate).length / outcomes.length;
+}
+
+function countHeads(coins) {
+  return coins.filter((coin) => coin === "H").length;
+}
+
+function getInstrumentName(key) {
+  return {
+    dice: "Dice",
+    cards: "Cards",
+    coins: "Coins",
+  }[key];
+}
+
 function formatMoney(value) {
   return `$${Math.round(value).toLocaleString("en-US")}`;
+}
+
+function formatMoneyCents(value) {
+  return `$${value.toFixed(2)}`;
 }
 
 function formatOdds(value) {
   if (value >= 10) return `${value.toFixed(1)}:1`;
   return `${value.toFixed(2)}:1`;
-}
-
-function formatPercent(value) {
-  return `${(value * 100).toFixed(1)}%`;
-}
-
-function formatSignedPercent(value) {
-  const sign = value >= 0 ? "+" : "";
-  return `${sign}${(value * 100).toFixed(1)}%`;
 }
 
 function roundOdds(value) {
@@ -992,14 +878,6 @@ function roundOdds(value) {
 
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function randomBetween(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
-function randomChance(probability) {
-  return Math.random() < probability;
 }
 
 function sample(items) {
@@ -1052,18 +930,8 @@ els.marketGrid.addEventListener("click", (event) => {
   }
 });
 
-document.querySelectorAll(".tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((button) => {
-      button.classList.toggle("is-active", button === tab);
-    });
-    els.tabBody.innerHTML = notebook[tab.dataset.tab];
-  });
-});
-
 els.clearReviewButton.addEventListener("click", () => {
   els.reviewDrawer.classList.remove("is-open");
 });
 
-els.tabBody.innerHTML = notebook.rules;
 startGame();
