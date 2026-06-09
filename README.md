@@ -20,6 +20,7 @@ http://127.0.0.1:8765/
 
 - Each round shows three columns: two dice, two cards, and three coins.
 - Each column has two posted markets with only the given payout odds visible before submission.
+- Posted odds are close to fair value: some are subtly too high, some subtly too low, and some fair.
 - The player chooses which markets to pass or stake.
 - After submission, the dice roll, the cards are drawn, and the coins flip.
 - Results reveal P&L, the correct bet/pass action, and the correct Kelly-sized stake.

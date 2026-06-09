@@ -27,9 +27,21 @@ const els = {
 };
 
 const ROUND_SECONDS = 60;
-const EDGE_EPSILON = 0.005;
 const SUITS = ["hearts", "diamonds", "clubs", "spades"];
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const QUOTE_PATTERNS = [
+  ["high", "high", "low", "low", "fair", "fair"],
+  ["high", "low", "low", "fair", "fair", "fair"],
+  ["high", "high", "high", "low", "fair", "fair"],
+  ["high", "high", "low", "low", "low", "fair"],
+  ["high", "high", "low", "fair", "fair", "fair"],
+];
+const QUOTE_MULTIPLIERS = {
+  high: [1.028, 1.034, 1.041, 1.048, 1.056],
+  low: [0.944, 0.952, 0.959, 0.966, 0.972],
+  fair: [1],
+};
+const MAX_QUOTE_DEVIATION = 0.06;
 
 let state;
 
@@ -106,27 +118,29 @@ function clearTimer() {
 }
 
 function createRoundBoard() {
+  const quotePlans = createRoundQuotePlans();
+  const nextQuotePlan = () => quotePlans.shift();
   const board = {
     dice: {
       key: "dice",
       label: "Two Dice",
       display: [6, 6],
       outcome: null,
-      markets: quoteTwoMarkets(diceMarketTemplates),
+      markets: quoteTwoMarkets(diceMarketTemplates, nextQuotePlan),
     },
     cards: {
       key: "cards",
       label: "Two Cards",
       display: [null, null],
       outcome: null,
-      markets: quoteTwoMarkets(cardMarketTemplates),
+      markets: quoteTwoMarkets(cardMarketTemplates, nextQuotePlan),
     },
     coins: {
       key: "coins",
       label: "Three Coins",
       display: ["H", "H", "H"],
       outcome: null,
-      markets: quoteTwoMarkets(coinMarketTemplates),
+      markets: quoteTwoMarkets(coinMarketTemplates, nextQuotePlan),
     },
   };
 
@@ -139,14 +153,16 @@ function createRoundBoard() {
   return board;
 }
 
-function quoteTwoMarkets(templates) {
-  const picked = shuffle(templates).slice(0, 2);
-  const multipliers = shuffle([
-    sample([1.12, 1.24, 1.38, 1.55]),
-    sample([0.62, 0.78, 0.9, 0.96]),
-  ]);
+function createRoundQuotePlans() {
+  return shuffle(sample(QUOTE_PATTERNS)).map((kind) => ({
+    kind,
+    multiplier: sample(QUOTE_MULTIPLIERS[kind]),
+  }));
+}
 
-  return picked.map((template, index) => quoteMarket(template(), multipliers[index]));
+function quoteTwoMarkets(templates, nextQuotePlan) {
+  const picked = shuffle(templates).slice(0, 2);
+  return picked.map((template) => quoteMarket(template(), nextQuotePlan()));
 }
 
 const diceMarketTemplates = [
@@ -291,11 +307,12 @@ const coinMarketTemplates = [
   }),
 ];
 
-function quoteMarket(base, multiplier) {
+function quoteMarket(base, quotePlan) {
   const fairOdds = (1 - base.probability) / base.probability;
-  const offeredOdds = roundOdds(Math.max(0.05, fairOdds * multiplier));
-  const edge = base.probability * offeredOdds - (1 - base.probability);
-  const kellyFraction = Math.max(0, edge / offeredOdds);
+  const offeredOdds = buildQuotedOdds(fairOdds, quotePlan);
+  const rawEdge = base.probability * offeredOdds - (1 - base.probability);
+  const edge = quotePlan.kind === "fair" ? 0 : rawEdge;
+  const kellyFraction = quotePlan.kind === "high" && edge > 0 ? edge / offeredOdds : 0;
 
   return {
     ...base,
@@ -304,7 +321,44 @@ function quoteMarket(base, multiplier) {
     offeredOdds,
     edge,
     kellyFraction,
+    quoteKind: quotePlan.kind,
   };
+}
+
+function buildQuotedOdds(fairOdds, quotePlan) {
+  if (quotePlan.kind === "fair") return roundOdds(fairOdds);
+
+  let quoted = roundOdds(Math.max(0.05, fairOdds * quotePlan.multiplier));
+  const increment = 0.01;
+
+  if (quotePlan.kind === "high" && quoted <= fairOdds) {
+    quoted = roundOdds(fairOdds + increment);
+  }
+
+  if (quotePlan.kind === "low" && quoted >= fairOdds) {
+    quoted = roundOdds(Math.max(0.05, fairOdds - increment));
+  }
+
+  return clampQuotedOdds(quoted, fairOdds, quotePlan.kind);
+}
+
+function clampQuotedOdds(quoted, fairOdds, kind) {
+  const increment = 0.01;
+  let adjusted = quoted;
+
+  while (Math.abs(adjusted / fairOdds - 1) > MAX_QUOTE_DEVIATION) {
+    adjusted = kind === "high" ? roundOdds(adjusted - increment) : roundOdds(adjusted + increment);
+
+    if (kind === "high" && adjusted <= fairOdds) {
+      return roundOdds(fairOdds + increment);
+    }
+
+    if (kind === "low" && adjusted >= fairOdds) {
+      return roundOdds(Math.max(0.05, fairOdds - increment));
+    }
+  }
+
+  return adjusted;
 }
 
 function submitRound() {
@@ -867,12 +921,10 @@ function formatMoneyCents(value) {
 }
 
 function formatOdds(value) {
-  if (value >= 10) return `${value.toFixed(1)}:1`;
   return `${value.toFixed(2)}:1`;
 }
 
 function roundOdds(value) {
-  if (value >= 10) return Math.round(value * 10) / 10;
   return Math.round(value * 100) / 100;
 }
 
