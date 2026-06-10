@@ -68,6 +68,25 @@ const mathEls = {
   leaderboardPoints: document.querySelector("#mathLeaderboardPoints"),
 };
 
+const sequenceEls = {
+  phaseLabel: document.querySelector("#sequencePhaseLabel"),
+  resetButton: document.querySelector("#sequenceResetButton"),
+  startButton: document.querySelector("#sequenceStartButton"),
+  skipButton: document.querySelector("#sequenceSkipButton"),
+  difficulty: document.querySelector("#sequenceDifficulty"),
+  rounds: document.querySelector("#sequenceRounds"),
+  correct: document.querySelector("#sequenceCorrect"),
+  round: document.querySelector("#sequenceRound"),
+  pace: document.querySelector("#sequencePace"),
+  message: document.querySelector("#sequenceMessage"),
+  timer: document.querySelector("#sequenceTimer"),
+  target: document.querySelector("#sequenceTarget"),
+  options: document.querySelector("#sequenceOptions"),
+  score: document.querySelector("#sequenceScore"),
+  stats: document.querySelector("#sequenceStats"),
+  review: document.querySelector("#sequenceReview"),
+};
+
 const fermiEls = {
   phaseLabel: document.querySelector("#fermiPhaseLabel"),
   resetButton: document.querySelector("#fermiResetButton"),
@@ -208,6 +227,66 @@ const ETF_PRODUCTS = [
   { symbol: "TRI", name: "Three Stock ETF", constituents: ["CRN", "DEX", "ELM"] },
   { symbol: "MIX", name: "Mixed Basket ETF", constituents: ["BEX", "FRO", "GLO", "ALP"] },
 ];
+const SEQUENCE_SETTINGS = {
+  easy: {
+    length: [5, 6],
+    startMs: 4200,
+    minMs: 1500,
+    maxMs: 5200,
+    alphabet: "ABCDEFGHJKLMNPQRSTUVWXYZ2346789",
+  },
+  medium: {
+    length: [6, 8],
+    startMs: 3200,
+    minMs: 950,
+    maxMs: 4400,
+    alphabet: "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+  },
+  hard: {
+    length: [7, 9],
+    startMs: 2400,
+    minMs: 650,
+    maxMs: 3600,
+    alphabet: "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789",
+  },
+};
+const SEQUENCE_CONFUSABLES = {
+  B: ["8", "R"],
+  C: ["G", "O"],
+  D: ["0", "O"],
+  E: ["F", "3"],
+  F: ["E", "P"],
+  G: ["C", "6"],
+  H: ["N", "M"],
+  I: ["1", "L"],
+  J: ["I", "1"],
+  K: ["X", "R"],
+  L: ["I", "1"],
+  M: ["N", "H"],
+  N: ["M", "H"],
+  O: ["0", "Q", "D"],
+  P: ["F", "R"],
+  Q: ["O", "0"],
+  R: ["B", "P"],
+  S: ["5", "8"],
+  T: ["7", "I"],
+  U: ["V", "W"],
+  V: ["U", "Y"],
+  W: ["V", "M"],
+  X: ["K", "Y"],
+  Y: ["V", "X"],
+  Z: ["2", "7"],
+  0: ["O", "Q", "D"],
+  1: ["I", "L", "J"],
+  2: ["Z", "7"],
+  3: ["E", "8"],
+  4: ["A", "H"],
+  5: ["S", "6"],
+  6: ["G", "5"],
+  7: ["T", "Z"],
+  8: ["B", "S", "3"],
+  9: ["G", "Q"],
+};
 const FERMI_BOTS = [
   { name: "Ada", sigma: 0.45 },
   { name: "Bo", sigma: 0.7 },
@@ -370,6 +449,7 @@ const FERMI_QUESTIONS = [
 let state;
 let etfState;
 let mathState;
+let sequenceState;
 let fermiState;
 let fruitState;
 let nextCardState;
@@ -1300,6 +1380,7 @@ function setActiveGame(game) {
     els.appTitle.textContent = "Probability Betting";
     stopEtfTimer();
     stopMathTimer(false);
+    stopSequenceTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
@@ -1314,6 +1395,7 @@ function setActiveGame(game) {
     els.appEyebrow.textContent = "ETF arbitrage practice";
     els.appTitle.textContent = "ETF Challenge";
     stopMathTimer(false);
+    stopSequenceTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
@@ -1327,6 +1409,7 @@ function setActiveGame(game) {
     els.appEyebrow.textContent = "Mental math speed practice";
     els.appTitle.textContent = "Math Challenge";
     stopEtfTimer();
+    stopSequenceTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     if (mathState?.phase === "playing" && !mathState.timerId) {
@@ -1339,11 +1422,29 @@ function setActiveGame(game) {
     return;
   }
 
+  if (game === "sequence") {
+    els.appEyebrow.textContent = "OA attention drill";
+    els.appTitle.textContent = "Sequence Match";
+    stopEtfTimer();
+    stopMathTimer(false);
+    stopFermiTimer(false);
+    stopFruitTimer(false);
+    if (sequenceState?.phase === "playing" && !sequenceState.timerId) {
+      startSequenceTimer();
+    }
+    renderNextCard();
+    renderMakeMarket();
+    renderCardsMarket();
+    renderSequence();
+    return;
+  }
+
   if (game === "fermi") {
     els.appEyebrow.textContent = "Estimation practice";
     els.appTitle.textContent = "Fermi Questions";
     stopEtfTimer();
     stopMathTimer(false);
+    stopSequenceTimer(false);
     stopFruitTimer(false);
     if (fermiState?.phase === "answering" && !fermiState.timerId) {
       fermiState.timerId = window.setInterval(tickFermiClock, 1000);
@@ -1360,6 +1461,7 @@ function setActiveGame(game) {
     els.appTitle.textContent = "Fruit Market";
     stopEtfTimer();
     stopMathTimer(false);
+    stopSequenceTimer(false);
     stopFermiTimer(false);
     if (fruitState?.phase === "running" && !fruitState.timerId) {
       startFruitTimer();
@@ -1376,6 +1478,7 @@ function setActiveGame(game) {
     els.appTitle.textContent = "Next Card Betting";
     stopEtfTimer();
     stopMathTimer(false);
+    stopSequenceTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     renderMakeMarket();
@@ -1389,6 +1492,7 @@ function setActiveGame(game) {
     els.appTitle.textContent = "Make Me a Market";
     stopEtfTimer();
     stopMathTimer(false);
+    stopSequenceTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
@@ -1401,6 +1505,7 @@ function setActiveGame(game) {
   els.appTitle.textContent = "Market of Cards";
   stopEtfTimer();
   stopMathTimer(false);
+  stopSequenceTimer(false);
   stopFermiTimer(false);
   stopFruitTimer(false);
   renderNextCard();
@@ -2149,6 +2254,344 @@ function renderMathReview() {
         <div class="review-item ${className}">
           <strong>${item.prompt} = ${item.answer}</strong>
           <span>${result}; submitted ${item.submitted}; ${(item.elapsedMs / 1000).toFixed(1)}s</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function initSequenceGame() {
+  stopSequenceTimer(false);
+  sequenceState = createSequenceState("ready");
+  renderSequence();
+}
+
+function createSequenceState(phase) {
+  const difficulty = sequenceEls.difficulty.value;
+  const settings = SEQUENCE_SETTINGS[difficulty];
+  return {
+    phase,
+    difficulty,
+    settings,
+    rounds: Number(sequenceEls.rounds.value),
+    questionIndex: 0,
+    current: null,
+    timeLimitMs: settings.startMs,
+    deadline: null,
+    timerId: null,
+    correct: 0,
+    wrong: 0,
+    correctStreak: 0,
+    wrongStreak: 0,
+    bestStreak: 0,
+    accepting: false,
+    history: [],
+  };
+}
+
+function startSequenceGame() {
+  if (sequenceState?.phase === "playing") {
+    finishSequenceGame();
+    return;
+  }
+
+  sequenceState = createSequenceState("playing");
+  beginSequenceQuestion();
+}
+
+function beginSequenceQuestion() {
+  if (!sequenceState || sequenceState.phase !== "playing") return;
+  if (sequenceState.questionIndex >= sequenceState.rounds) {
+    finishSequenceGame();
+    return;
+  }
+
+  sequenceState.current = generateSequenceQuestion(sequenceState.difficulty);
+  sequenceState.deadline = Date.now() + sequenceState.timeLimitMs;
+  sequenceState.accepting = true;
+  startSequenceTimer();
+  renderSequence();
+}
+
+function stopSequenceTimer(markPaused = true) {
+  if (sequenceState?.timerId) {
+    window.clearInterval(sequenceState.timerId);
+    sequenceState.timerId = null;
+  }
+  if (markPaused && sequenceState?.phase === "playing") {
+    sequenceState.phase = "ready";
+    sequenceState.accepting = false;
+  }
+}
+
+function startSequenceTimer() {
+  if (!sequenceState || sequenceState.phase !== "playing") return;
+  if (sequenceState.timerId) window.clearInterval(sequenceState.timerId);
+  sequenceState.timerId = window.setInterval(tickSequenceClock, 50);
+}
+
+function tickSequenceClock() {
+  if (!sequenceState || sequenceState.phase !== "playing" || !sequenceState.current) return;
+  const remainingMs = getSequenceRemainingMs();
+  if (remainingMs <= 0) {
+    recordSequenceAnswer(null, "timeout");
+    return;
+  }
+  sequenceEls.timer.textContent = formatSequenceSeconds(remainingMs);
+}
+
+function recordSequenceAnswer(optionIndex, reason = "selected") {
+  if (!sequenceState || sequenceState.phase !== "playing" || !sequenceState.accepting) return;
+  sequenceState.accepting = false;
+  stopSequenceTimer(false);
+
+  const selected =
+    optionIndex === null || optionIndex === undefined ? null : sequenceState.current.options[optionIndex];
+  const correct = selected === sequenceState.current.target;
+  const elapsedMs = Math.max(0, sequenceState.timeLimitMs - getSequenceRemainingMs());
+
+  if (correct) {
+    sequenceState.correct += 1;
+    sequenceState.correctStreak += 1;
+    sequenceState.wrongStreak = 0;
+    sequenceState.bestStreak = Math.max(sequenceState.bestStreak, sequenceState.correctStreak);
+  } else {
+    sequenceState.wrong += 1;
+    sequenceState.correctStreak = 0;
+    sequenceState.wrongStreak += 1;
+  }
+
+  sequenceState.history.push({
+    round: sequenceState.questionIndex + 1,
+    target: sequenceState.current.target,
+    selected,
+    correct,
+    reason,
+    timeLimitMs: sequenceState.timeLimitMs,
+    elapsedMs,
+  });
+  adjustSequencePace(correct);
+  sequenceState.questionIndex += 1;
+
+  if (sequenceState.questionIndex >= sequenceState.rounds) {
+    finishSequenceGame();
+    return;
+  }
+
+  beginSequenceQuestion();
+}
+
+function adjustSequencePace(correct) {
+  const { minMs, maxMs } = sequenceState.settings;
+  if (correct) {
+    const multiplier = sequenceState.correctStreak > 0 && sequenceState.correctStreak % 5 === 0 ? 0.78 : 0.94;
+    sequenceState.timeLimitMs = clamp(Math.round(sequenceState.timeLimitMs * multiplier), minMs, maxMs);
+    return;
+  }
+
+  if (sequenceState.wrongStreak >= 2) {
+    sequenceState.timeLimitMs = clamp(Math.round(sequenceState.timeLimitMs * 1.16), minMs, maxMs);
+  }
+}
+
+function finishSequenceGame() {
+  if (!sequenceState) return;
+  stopSequenceTimer(false);
+  sequenceState.phase = "finished";
+  sequenceState.current = null;
+  sequenceState.accepting = false;
+  renderSequence();
+}
+
+function generateSequenceQuestion(difficulty) {
+  const settings = SEQUENCE_SETTINGS[difficulty];
+  const length = randomInt(settings.length[0], settings.length[1]);
+  const target = Array.from({ length }, () => sample(settings.alphabet)).join("");
+  const optionCount = difficulty === "easy" ? 5 : 6;
+  const options = new Set([target]);
+  let guard = 0;
+
+  while (options.size < optionCount && guard < 80) {
+    options.add(makeSequenceDistractor(target, difficulty, options));
+    guard += 1;
+  }
+
+  while (options.size < optionCount) {
+    options.add(Array.from({ length }, () => sample(settings.alphabet)).join(""));
+  }
+
+  return {
+    target,
+    options: shuffle([...options]),
+  };
+}
+
+function makeSequenceDistractor(target, difficulty, existing) {
+  const chars = target.split("");
+  const edits = difficulty === "easy" ? 1 : randomInt(1, difficulty === "hard" ? 3 : 2);
+  const used = new Set();
+  for (let i = 0; i < edits; i += 1) {
+    let index = randomInt(0, chars.length - 1);
+    while (used.has(index) && used.size < chars.length) {
+      index = randomInt(0, chars.length - 1);
+    }
+    used.add(index);
+    chars[index] = getSequenceReplacement(chars[index], difficulty);
+  }
+
+  const candidate = chars.join("");
+  if (candidate !== target && !existing.has(candidate)) return candidate;
+
+  const fallbackIndex = randomInt(0, chars.length - 1);
+  chars[fallbackIndex] = sample(SEQUENCE_SETTINGS[difficulty].alphabet);
+  return chars.join("") === target ? target.split("").reverse().join("") : chars.join("");
+}
+
+function getSequenceReplacement(char, difficulty) {
+  if (difficulty === "hard" && SEQUENCE_CONFUSABLES[char]) {
+    return sample(SEQUENCE_CONFUSABLES[char]);
+  }
+
+  if (difficulty === "medium" && Math.random() < 0.45 && SEQUENCE_CONFUSABLES[char]) {
+    return sample(SEQUENCE_CONFUSABLES[char]);
+  }
+
+  const alphabet = SEQUENCE_SETTINGS[difficulty].alphabet;
+  let replacement = sample(alphabet);
+  while (replacement === char) {
+    replacement = sample(alphabet);
+  }
+  return replacement;
+}
+
+function getSequenceRemainingMs() {
+  if (!sequenceState?.deadline) return sequenceState?.timeLimitMs ?? 0;
+  return Math.max(0, sequenceState.deadline - Date.now());
+}
+
+function formatSequenceSeconds(ms) {
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
+function getSequenceAccuracy() {
+  if (!sequenceState?.history.length) return 0;
+  return sequenceState.correct / sequenceState.history.length;
+}
+
+function getSequenceAverageMs() {
+  if (!sequenceState?.history.length) return null;
+  const answered = sequenceState.history.filter((item) => item.reason !== "timeout");
+  if (!answered.length) return null;
+  return answered.reduce((sum, item) => sum + item.elapsedMs, 0) / answered.length;
+}
+
+function getSequenceScore() {
+  if (!sequenceState) return 0;
+  const accuracyBonus = Math.round(getSequenceAccuracy() * 200);
+  const streakBonus = sequenceState.bestStreak * 12;
+  return Math.max(0, sequenceState.correct * 100 - sequenceState.wrong * 25 + accuracyBonus + streakBonus);
+}
+
+function renderSequence() {
+  if (!sequenceState) return;
+  if (activeGame === "sequence") renderSequenceStatus();
+
+  sequenceEls.phaseLabel.textContent = getSequencePhaseLabel();
+  sequenceEls.startButton.textContent = sequenceState.phase === "playing" ? "Finish" : "Start";
+  sequenceEls.skipButton.disabled = sequenceState.phase !== "playing";
+  sequenceEls.difficulty.disabled = sequenceState.phase === "playing";
+  sequenceEls.rounds.disabled = sequenceState.phase === "playing";
+  sequenceEls.correct.textContent =
+    sequenceState.phase === "finished" ? `${sequenceState.correct} / ${sequenceState.history.length}` : "Hidden";
+  sequenceEls.round.textContent = `${Math.min(sequenceState.questionIndex + (sequenceState.phase === "playing" ? 1 : 0), sequenceState.rounds)} / ${sequenceState.rounds}`;
+  sequenceEls.pace.textContent = formatSequenceSeconds(sequenceState.timeLimitMs);
+  sequenceEls.score.textContent = sequenceState.phase === "finished" ? `${getSequenceScore()} pts` : "Hidden";
+
+  if (sequenceState.phase === "ready") {
+    sequenceEls.timer.textContent = "Ready";
+    sequenceEls.target.textContent = "Press Start";
+    sequenceEls.options.innerHTML = "";
+    sequenceEls.message.textContent = "";
+  } else if (sequenceState.phase === "finished") {
+    sequenceEls.timer.textContent = "Complete";
+    sequenceEls.target.textContent = `${sequenceState.correct} / ${sequenceState.history.length}`;
+    sequenceEls.options.innerHTML = "";
+    sequenceEls.message.textContent = "Results are now available in the session review.";
+  } else {
+    sequenceEls.timer.textContent = formatSequenceSeconds(getSequenceRemainingMs());
+    sequenceEls.target.textContent = sequenceState.current.target;
+    sequenceEls.message.textContent = "";
+    sequenceEls.options.innerHTML = sequenceState.current.options
+      .map(
+        (option, index) => `
+          <button class="sequence-option" type="button" data-sequence-option="${index}">
+            ${option}
+          </button>
+        `,
+      )
+      .join("");
+  }
+
+  renderSequenceStats();
+  renderSequenceReview();
+}
+
+function getSequencePhaseLabel() {
+  if (sequenceState.phase === "playing") return "Timed match";
+  if (sequenceState.phase === "finished") return "Review";
+  return "Ready";
+}
+
+function renderSequenceStatus() {
+  els.statusLabelOne.textContent = "Correct";
+  els.statusLabelTwo.textContent = "Round";
+  els.statusLabelThree.textContent = "Streak";
+  els.statusLabelFour.textContent = "Clock";
+  els.bankrollValue.textContent =
+    sequenceState.phase === "finished" ? `${sequenceState.correct} / ${sequenceState.history.length}` : "Hidden";
+  els.roundValue.textContent = `${Math.min(sequenceState.questionIndex + (sequenceState.phase === "playing" ? 1 : 0), sequenceState.rounds)} / ${sequenceState.rounds}`;
+  els.skillValue.textContent = sequenceState.phase === "finished" ? String(sequenceState.bestStreak) : "Hidden";
+  els.clockValue.textContent =
+    sequenceState.phase === "playing" ? formatSequenceSeconds(getSequenceRemainingMs()) : formatSequenceSeconds(sequenceState.timeLimitMs);
+}
+
+function renderSequenceStats() {
+  if (sequenceState.phase !== "finished") {
+    sequenceEls.stats.innerHTML = `
+      <div><span>Accuracy</span><strong>Hidden</strong></div>
+      <div><span>Best streak</span><strong>Hidden</strong></div>
+      <div><span>Avg answer</span><strong>Hidden</strong></div>
+    `;
+    return;
+  }
+
+  const avgMs = getSequenceAverageMs();
+  sequenceEls.stats.innerHTML = `
+    <div><span>Accuracy</span><strong>${Math.round(getSequenceAccuracy() * 100)}%</strong></div>
+    <div><span>Best streak</span><strong>${sequenceState.bestStreak}</strong></div>
+    <div><span>Avg answer</span><strong>${avgMs === null ? "-" : formatSequenceSeconds(avgMs)}</strong></div>
+  `;
+}
+
+function renderSequenceReview() {
+  if (sequenceState.phase !== "finished") {
+    sequenceEls.review.innerHTML = `<div class="review-item"><strong>Feedback is hidden while you play</strong><span>Answers, misses, and near-match errors appear after the final round.</span></div>`;
+    return;
+  }
+
+  if (!sequenceState.history.length) {
+    sequenceEls.review.innerHTML = `<div class="review-item"><strong>No rounds played</strong><span>Press Start to begin the sequence drill.</span></div>`;
+    return;
+  }
+
+  sequenceEls.review.innerHTML = sequenceState.history
+    .map((item) => {
+      const className = item.correct ? "correct" : item.reason === "timeout" ? "missed" : "incorrect";
+      const submitted = item.selected ?? (item.reason === "timeout" ? "Timed out" : "Skipped");
+      return `
+        <div class="review-item ${className}">
+          <strong>${item.round}. ${item.target}</strong>
+          <span>${item.correct ? "Correct" : "Wrong"}; chose ${submitted}; limit ${formatSequenceSeconds(item.timeLimitMs)}; answered in ${formatSequenceSeconds(item.elapsedMs)}</span>
         </div>
       `;
     })
@@ -3563,6 +4006,15 @@ mathEls.choices.addEventListener("click", (event) => {
   submitMathAnswer(choice.dataset.mathChoice);
 });
 
+sequenceEls.resetButton.addEventListener("click", initSequenceGame);
+sequenceEls.startButton.addEventListener("click", startSequenceGame);
+sequenceEls.skipButton.addEventListener("click", () => recordSequenceAnswer(null, "skipped"));
+sequenceEls.options.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-sequence-option]");
+  if (!option) return;
+  recordSequenceAnswer(Number(option.dataset.sequenceOption), "selected");
+});
+
 fermiEls.resetButton.addEventListener("click", initFermiGame);
 fermiEls.nextButton.addEventListener("click", startOrAdvanceFermi);
 fermiEls.submitButton.addEventListener("click", () => {
@@ -3609,6 +4061,7 @@ setupGameTabs();
 startGame();
 initEtfGame();
 initMathGame();
+initSequenceGame();
 initFermiGame();
 initFruitGame();
 initNextCardGame();

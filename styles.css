@@ -1008,9 +1008,20 @@ button {
   grid-template-columns: repeat(3, minmax(150px, 220px)) auto;
 }
 
+.sequence-controls {
+  grid-template-columns: repeat(3, minmax(150px, 220px)) auto;
+}
+
 .practice-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.sequence-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.65fr);
   gap: 14px;
   align-items: start;
 }
@@ -1030,6 +1041,12 @@ button {
   padding: 16px;
 }
 
+.sequence-body {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
 .question-text {
   display: grid;
   place-items: center;
@@ -1041,6 +1058,75 @@ button {
   font-size: 42px;
   font-weight: 900;
   text-align: center;
+}
+
+.sequence-target {
+  display: grid;
+  place-items: center;
+  min-height: 142px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #121713;
+  color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.sequence-options {
+  display: grid;
+  gap: 8px;
+}
+
+.sequence-option {
+  min-height: 54px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.sequence-option:hover {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.sequence-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.sequence-stats div {
+  min-height: 58px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.sequence-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sequence-stats strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
 }
 
 .choice-grid {
@@ -1380,6 +1466,7 @@ button {
   .etf-layout,
   .etf-board,
   .practice-grid,
+  .sequence-layout,
   .fruit-layout,
   .card-betting-layout,
   .cards-market-layout {
@@ -1396,6 +1483,7 @@ button {
   .round-summary,
   .score-panel,
   .control-band,
+  .sequence-stats,
   .instrument-column,
   .etf-reference,
   .game-tabs {
@@ -1451,6 +1539,16 @@ button {
   .question-text {
     min-height: 118px;
     font-size: 30px;
+  }
+
+  .sequence-target {
+    min-height: 112px;
+    font-size: 32px;
+  }
+
+  .sequence-option {
+    min-height: 50px;
+    font-size: 22px;
   }
 
   .choice-grid {
