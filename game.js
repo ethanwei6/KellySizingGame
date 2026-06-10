@@ -1530,8 +1530,8 @@ function executeEtfTrade(symbol, side) {
     text: `${side === "buy" ? "Buy" : "Sell"} ${etf.symbol}`,
     detail:
       side === "buy"
-        ? `Sold basket at bids, bought ETF at ask`
-        : `Sold ETF at bid, bought basket at asks`,
+        ? `Unwound via constituent bids and package ask`
+        : `Unwound via package bid and constituent asks`,
     pnl,
     edge,
     type: etfState.lastUpdateType,
@@ -2281,7 +2281,7 @@ function moveHanoiBlock(fromRod, toRod) {
   }
 
   if (destinationTop && disk > destinationTop) {
-    hanoiEls.message.textContent = "Illegal move: a larger block cannot go on a smaller block.";
+    hanoiEls.message.textContent = "Move blocked: use an empty pole or a wider top block.";
     hanoiState.selectedRod = fromRod;
     renderHanoi();
     return;
@@ -3028,7 +3028,7 @@ function renderNextCardPlayed() {
 
 function renderNextCardReview() {
   if (!nextCardState.history.length) {
-    nextCardEls.review.innerHTML = `<div class="review-item"><strong>No completed bets yet</strong><span>Probabilities and Kelly sizing are revealed only after a bet resolves.</span></div>`;
+    nextCardEls.review.innerHTML = `<div class="review-item"><strong>No completed bets yet</strong><span>The count breakdown and sizing benchmark appear after a bet resolves.</span></div>`;
     return;
   }
   nextCardEls.review.innerHTML = nextCardState.history
@@ -3554,7 +3554,7 @@ function renderCardsMarketTable() {
 
 function renderCardsMarketResponse() {
   if (cardsMarketState.phase === "quoting") {
-    cardsMarketEls.response.innerHTML = `<div class="review-item"><strong>Your turn to quote</strong><span>Bots can buy your ask, sell to your bid, or pass. First interested bot gets the trade.</span></div>`;
+    cardsMarketEls.response.innerHTML = `<div class="review-item"><strong>Your turn to quote</strong><span>Counterparties may lift, hit, or decline your market. The first taker fills.</span></div>`;
     return;
   }
 
@@ -3563,7 +3563,7 @@ function renderCardsMarketResponse() {
     cardsMarketEls.response.innerHTML = `
       <div class="review-item">
         <strong>${quote.bot.name} quotes ${quote.bid} / ${quote.ask}</strong>
-        <span>Buy at ask, sell at bid, or pass.</span>
+        <span>Lift the offer, hit the bid, or decline.</span>
       </div>
       <div class="cards-response-actions">
         <button class="buy-button" type="button" data-cards-response="buy">Buy</button>
@@ -3575,7 +3575,7 @@ function renderCardsMarketResponse() {
   }
 
   if (cardsMarketState.phase === "final") {
-    cardsMarketEls.response.innerHTML = `<div class="review-item correct"><strong>Final value ${getCardsFinalValue()}</strong><span>Final P&L = cash + position x final value = ${signedNumber(getCardsProjectedPnl())}.</span></div>`;
+    cardsMarketEls.response.innerHTML = `<div class="review-item correct"><strong>Final value ${getCardsFinalValue()}</strong><span>Settled account value: ${signedNumber(getCardsProjectedPnl())}.</span></div>`;
     return;
   }
 

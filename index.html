@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>Market Making Practice</title>
+    <title>Trading Interview Practice</title>
     <link rel="stylesheet" href="./styles.css?v=generic-names-1" />
   </head>
   <body>
@@ -19,7 +19,7 @@
             <span></span>
           </div>
           <div>
-            <p class="eyebrow" id="appEyebrow">Market making practice</p>
+            <p class="eyebrow" id="appEyebrow">Trading interview practice</p>
             <h1 id="appTitle">Odds Calibration Lab</h1>
           </div>
         </div>
@@ -156,7 +156,7 @@
             </div>
           </div>
 
-          <section class="round-summary etf-summary" aria-label="ETF challenge summary">
+          <section class="round-summary etf-summary" aria-label="Basket arbitrage drill summary">
             <div>
               <span>Total P&L</span>
               <strong id="etfPnl">$0</strong>
@@ -185,14 +185,14 @@
             <section class="etf-board" id="etfBoard" aria-label="ETF trading board"></section>
           </section>
 
-          <section class="etf-reference" aria-label="ETF arbitrage rules">
+          <section class="etf-reference" aria-label="Basket comparison guide">
             <div>
-              <span>Buy ETF</span>
-              <strong>Stock bid sum &gt; ETF ask</strong>
+              <span>Cheap package</span>
+              <strong>Leg-sale value clears package ask</strong>
             </div>
             <div>
-              <span>Sell ETF</span>
-              <strong>ETF bid &gt; stock ask sum</strong>
+              <span>Rich package</span>
+              <strong>Package bid clears leg-purchase cost</strong>
             </div>
             <div>
               <span>Trade score</span>
@@ -318,8 +318,8 @@
               </select>
             </div>
             <div class="control-row">
-              <label>Rule</label>
-              <input type="text" value="Never place a larger block on a smaller block" disabled />
+              <label>Move limit</label>
+              <input type="text" value="A block may land only on open space or a larger block" disabled />
             </div>
             <button class="secondary-button" id="hanoiNextButton" type="button">Next puzzle</button>
           </section>
@@ -553,14 +553,14 @@
             </div>
           </div>
 
-          <section class="control-band practice-controls" aria-label="Make me a market controls">
+          <section class="control-band practice-controls" aria-label="Quote range trainer controls">
             <div class="control-row">
-              <label for="makeMarketSpread">Spread rule</label>
+              <label for="makeMarketSpread">Max width</label>
               <select id="makeMarketSpread">
-                <option value="fixed">Fixed nice spread</option>
-                <option value="0.05">5% of bid</option>
-                <option value="0.10" selected>10% of bid</option>
-                <option value="0.20">20% of bid</option>
+                <option value="fixed">Fixed width</option>
+                <option value="0.05">Bid-based 5%</option>
+                <option value="0.10" selected>Bid-based 10%</option>
+                <option value="0.20">Bid-based 20%</option>
               </select>
             </div>
             <div class="control-row">
@@ -574,7 +574,7 @@
             <button class="secondary-button" id="makeMarketSubmitButton" type="button">Submit quote</button>
           </section>
 
-          <section class="round-summary" aria-label="Make me a market summary">
+          <section class="round-summary" aria-label="Quote range trainer summary">
             <div>
               <span>Position</span>
               <strong id="makeMarketPosition">0</strong>
@@ -632,7 +632,7 @@
 
           <section class="control-band practice-controls" aria-label="Card market simulator controls">
             <div class="control-row">
-              <label for="cardsMarketAce">Ace rule</label>
+              <label for="cardsMarketAce">Ace handling</label>
               <select id="cardsMarketAce">
                 <option value="high" selected>Ace high by color</option>
                 <option value="low">Ace low at +10</option>
