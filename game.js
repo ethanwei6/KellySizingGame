@@ -49,25 +49,6 @@ const etfEls = {
   score: document.querySelector("#etfScore"),
 };
 
-const mathEls = {
-  phaseLabel: document.querySelector("#mathPhaseLabel"),
-  resetButton: document.querySelector("#mathResetButton"),
-  startButton: document.querySelector("#mathStartButton"),
-  submitButton: document.querySelector("#mathSubmitButton"),
-  mode: document.querySelector("#mathMode"),
-  duration: document.querySelector("#mathDuration"),
-  typedAnswer: document.querySelector("#mathTypedAnswer"),
-  score: document.querySelector("#mathScore"),
-  accuracy: document.querySelector("#mathAccuracy"),
-  speed: document.querySelector("#mathSpeed"),
-  message: document.querySelector("#mathMessage"),
-  timer: document.querySelector("#mathTimer"),
-  questionText: document.querySelector("#mathQuestionText"),
-  choices: document.querySelector("#mathChoices"),
-  review: document.querySelector("#mathReview"),
-  leaderboardPoints: document.querySelector("#mathLeaderboardPoints"),
-};
-
 const sequenceEls = {
   phaseLabel: document.querySelector("#sequencePhaseLabel"),
   resetButton: document.querySelector("#sequenceResetButton"),
@@ -103,25 +84,6 @@ const hanoiEls = {
   score: document.querySelector("#hanoiScore"),
   stats: document.querySelector("#hanoiStats"),
   review: document.querySelector("#hanoiReview"),
-};
-
-const fermiEls = {
-  phaseLabel: document.querySelector("#fermiPhaseLabel"),
-  resetButton: document.querySelector("#fermiResetButton"),
-  nextButton: document.querySelector("#fermiNextButton"),
-  submitButton: document.querySelector("#fermiSubmitButton"),
-  rounds: document.querySelector("#fermiRounds"),
-  time: document.querySelector("#fermiTime"),
-  answer: document.querySelector("#fermiAnswer"),
-  score: document.querySelector("#fermiScore"),
-  round: document.querySelector("#fermiRound"),
-  factor: document.querySelector("#fermiFactor"),
-  message: document.querySelector("#fermiMessage"),
-  timer: document.querySelector("#fermiTimer"),
-  questionText: document.querySelector("#fermiQuestionText"),
-  botStatus: document.querySelector("#fermiBotStatus"),
-  review: document.querySelector("#fermiReview"),
-  leaderboardPoints: document.querySelector("#fermiLeaderboardPoints"),
 };
 
 const fruitEls = {
@@ -323,173 +285,12 @@ const HANOI_MIN_OPTIMAL = {
   6: 17,
   7: 24,
 };
-const FERMI_BOTS = [
-  { name: "Ada", sigma: 0.45 },
-  { name: "Bo", sigma: 0.7 },
-  { name: "Cy", sigma: 0.95 },
-  { name: "Dee", sigma: 1.15 },
-];
-const FERMI_QUESTIONS = [
-  {
-    prompt: "How many kilometers away is the Moon from Earth on average?",
-    answer: 384400,
-    type: "fact",
-    explanation: "NASA gives the Moon's average distance as about 384,400 km.",
-  },
-  {
-    prompt: "What is the Moon's radius in kilometers?",
-    answer: 1740,
-    type: "fact",
-    explanation: "NASA lists the Moon's radius at about 1,740 km.",
-  },
-  {
-    prompt: "How many kilograms of lunar rocks and soil did Apollo astronauts bring back?",
-    answer: 382,
-    type: "fact",
-    explanation: "NASA states Apollo astronauts returned 382 kg of lunar samples.",
-  },
-  {
-    prompt: "What is the Sun's diameter in kilometers?",
-    answer: 1400000,
-    type: "fact",
-    explanation: "NASA rounds the Sun's diameter to about 1.4 million km.",
-  },
-  {
-    prompt: "What is the temperature of the Sun's core in degrees Celsius?",
-    answer: 15000000,
-    type: "fact",
-    explanation: "NASA gives the Sun's core temperature as about 15 million C.",
-  },
-  {
-    prompt: "How fast does the solar system orbit the Milky Way in kilometers per hour?",
-    answer: 720000,
-    type: "fact",
-    explanation: "NASA lists the solar system's average galactic speed at about 720,000 km/h.",
-  },
-  {
-    prompt: "How many kilometers is Earth from the Sun in NASA's current quick-facts table?",
-    answer: 150196428,
-    type: "fact",
-    explanation: "NASA's Earth facts page lists 150,196,428 km as the distance from the Sun.",
-  },
-  {
-    prompt: "What is Earth's equatorial diameter in kilometers?",
-    answer: 12756,
-    type: "fact",
-    explanation: "NASA gives Earth's equatorial diameter as 12,756 km.",
-  },
-  {
-    prompt: "What is the radius of Earth's solid inner core in kilometers?",
-    answer: 1221,
-    type: "fact",
-    explanation: "NASA describes the inner core as a sphere about 1,221 km in radius.",
-  },
-  {
-    prompt: "How thick is Earth's mantle in kilometers?",
-    answer: 2900,
-    type: "fact",
-    explanation: "NASA gives the mantle thickness as about 2,900 km.",
-  },
-  {
-    prompt: "What percentage of Earth's water is contained in the oceans?",
-    answer: 97,
-    type: "fact",
-    explanation: "NASA states the global ocean contains 97% of Earth's water.",
-  },
-  {
-    prompt: "What is the average depth of Earth's global ocean in meters?",
-    answer: 3600,
-    type: "fact",
-    explanation: "NASA rounds the ocean's average depth to about 3.6 km, or 3,600 m.",
-  },
-  {
-    prompt: "How many meters is the Large Hadron Collider's circumference?",
-    answer: 26659,
-    type: "fact",
-    explanation: "CERN's key figures list the LHC circumference as 26,659 m.",
-  },
-  {
-    prompt: "How many superconducting magnets are in the LHC?",
-    answer: 9593,
-    type: "fact",
-    explanation: "CERN lists 9,593 magnets in the LHC key figures.",
-  },
-  {
-    prompt: "How many main dipole magnets bend the beams around the LHC?",
-    answer: 1232,
-    type: "fact",
-    explanation: "CERN lists 1,232 main dipoles.",
-  },
-  {
-    prompt: "How many turns per second do beams make in the LHC?",
-    answer: 11245,
-    type: "fact",
-    explanation: "CERN lists 11,245 turns per second.",
-  },
-  {
-    prompt: "How many proton-proton collisions per second occur in ATLAS and CMS at nominal LHC conditions?",
-    answer: 1500000000,
-    type: "fact",
-    explanation: "CERN lists 1.5 billion collisions per second in ATLAS and CMS.",
-  },
-  {
-    prompt: "How many bases are in a representative human reference genome?",
-    answer: 3000000000,
-    type: "fact",
-    explanation: "NHGRI describes a representative human genome as about 3 billion bases.",
-  },
-  {
-    prompt: "How many DNA bases are in a typical person's diploid genome?",
-    answer: 6000000000,
-    type: "fact",
-    explanation: "NHGRI notes a person's diploid genome is about 6 billion bases.",
-  },
-  {
-    prompt: "What was the U.S. Human Genome Project's total funding in dollars?",
-    answer: 2700000000,
-    type: "fact",
-    explanation: "NHGRI states the U.S. Human Genome Project funding was about $2.7 billion.",
-  },
-  {
-    prompt: "What was the late-2015 approximate cost to generate a draft whole human genome sequence in dollars?",
-    answer: 1500,
-    type: "fact",
-    explanation: "NHGRI says the cost fell below $1,500 by late 2015; use 1,500 as the rounded benchmark.",
-  },
-  {
-    prompt: "How many transistors are in Apple's M2 Max chip?",
-    answer: 67000000000,
-    type: "fact",
-    explanation: "Apple states M2 Max has 67 billion transistors.",
-  },
-  {
-    prompt: "How many transistors are in Apple's M2 Pro chip?",
-    answer: 40000000000,
-    type: "fact",
-    explanation: "Apple states M2 Pro has 40 billion transistors.",
-  },
-  {
-    prompt: "How many meters per second is the speed of light in vacuum?",
-    answer: 299792458,
-    type: "fact",
-    explanation: "The SI-defined speed of light is exactly 299,792,458 m/s.",
-  },
-  {
-    prompt: "How many elementary entities are in one mole?",
-    answer: 602214076000000000000000,
-    type: "fact",
-    explanation: "The SI defines one mole as exactly 6.02214076e23 elementary entities.",
-  },
-];
-
 let state;
 let etfState;
-let mathState;
 let sequenceState;
 let hanoiState;
 let hanoiPointerDrag = null;
 let hanoiSuppressNextClick = false;
-let fermiState;
 let fruitState;
 let nextCardState;
 let makeMarketState;
@@ -1416,12 +1217,10 @@ function setActiveGame(game) {
 
   if (game === "probability") {
     els.appEyebrow.textContent = "Kelly sizing practice";
-    els.appTitle.textContent = "Probability Betting";
+    els.appTitle.textContent = "Odds Calibration Lab";
     stopEtfTimer();
-    stopMathTimer(false);
     stopSequenceTimer(false);
     stopHanoiTimer(false);
-    stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
     renderMakeMarket();
@@ -1433,11 +1232,9 @@ function setActiveGame(game) {
 
   if (game === "etf") {
     els.appEyebrow.textContent = "ETF arbitrage practice";
-    els.appTitle.textContent = "ETF Challenge";
-    stopMathTimer(false);
+    els.appTitle.textContent = "Basket Arbitrage Drill";
     stopSequenceTimer(false);
     stopHanoiTimer(false);
-    stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
     renderMakeMarket();
@@ -1446,31 +1243,11 @@ function setActiveGame(game) {
     return;
   }
 
-  if (game === "math") {
-    els.appEyebrow.textContent = "Mental math speed practice";
-    els.appTitle.textContent = "Math Challenge";
-    stopEtfTimer();
-    stopSequenceTimer(false);
-    stopHanoiTimer(false);
-    stopFermiTimer(false);
-    stopFruitTimer(false);
-    if (mathState?.phase === "playing" && !mathState.timerId) {
-      mathState.timerId = window.setInterval(tickMathClock, 1000);
-    }
-    renderNextCard();
-    renderMakeMarket();
-    renderCardsMarket();
-    renderMath();
-    return;
-  }
-
   if (game === "sequence") {
     els.appEyebrow.textContent = "OA attention drill";
-    els.appTitle.textContent = "Sequence Match";
+    els.appTitle.textContent = "Sequence Recall Sprint";
     stopEtfTimer();
-    stopMathTimer(false);
     stopHanoiTimer(false);
-    stopFermiTimer(false);
     stopFruitTimer(false);
     if (sequenceState?.phase === "playing" && !sequenceState.timerId) {
       startSequenceTimer();
@@ -1484,11 +1261,9 @@ function setActiveGame(game) {
 
   if (game === "hanoi") {
     els.appEyebrow.textContent = "Optiver puzzle drill";
-    els.appTitle.textContent = "Hanoi Towers";
+    els.appTitle.textContent = "Tower Transfer Sprint";
     stopEtfTimer();
-    stopMathTimer(false);
     stopSequenceTimer(false);
-    stopFermiTimer(false);
     stopFruitTimer(false);
     if (hanoiState?.phase === "playing" && !hanoiState.timerId) {
       startHanoiTimer();
@@ -1500,32 +1275,12 @@ function setActiveGame(game) {
     return;
   }
 
-  if (game === "fermi") {
-    els.appEyebrow.textContent = "Estimation practice";
-    els.appTitle.textContent = "Fermi Questions";
-    stopEtfTimer();
-    stopMathTimer(false);
-    stopSequenceTimer(false);
-    stopHanoiTimer(false);
-    stopFruitTimer(false);
-    if (fermiState?.phase === "answering" && !fermiState.timerId) {
-      fermiState.timerId = window.setInterval(tickFermiClock, 1000);
-    }
-    renderNextCard();
-    renderMakeMarket();
-    renderCardsMarket();
-    renderFermi();
-    return;
-  }
-
   if (game === "fruit") {
     els.appEyebrow.textContent = "Beginner market making";
-    els.appTitle.textContent = "Fruit Market";
+    els.appTitle.textContent = "Produce Quote Drill";
     stopEtfTimer();
-    stopMathTimer(false);
     stopSequenceTimer(false);
     stopHanoiTimer(false);
-    stopFermiTimer(false);
     if (fruitState?.phase === "running" && !fruitState.timerId) {
       startFruitTimer();
     }
@@ -1538,12 +1293,10 @@ function setActiveGame(game) {
 
   if (game === "next-card") {
     els.appEyebrow.textContent = "Card counting practice";
-    els.appTitle.textContent = "Next Card Betting";
+    els.appTitle.textContent = "Card Edge Trainer";
     stopEtfTimer();
-    stopMathTimer(false);
     stopSequenceTimer(false);
     stopHanoiTimer(false);
-    stopFermiTimer(false);
     stopFruitTimer(false);
     renderMakeMarket();
     renderCardsMarket();
@@ -1553,12 +1306,10 @@ function setActiveGame(game) {
 
   if (game === "make-market") {
     els.appEyebrow.textContent = "Interview market making";
-    els.appTitle.textContent = "Make Me a Market";
+    els.appTitle.textContent = "Quote Range Trainer";
     stopEtfTimer();
-    stopMathTimer(false);
     stopSequenceTimer(false);
     stopHanoiTimer(false);
-    stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
     renderCardsMarket();
@@ -1567,12 +1318,10 @@ function setActiveGame(game) {
   }
 
   els.appEyebrow.textContent = "Hidden-information trading";
-  els.appTitle.textContent = "Market of Cards";
+  els.appTitle.textContent = "Card Market Simulator";
   stopEtfTimer();
-  stopMathTimer(false);
   stopSequenceTimer(false);
   stopHanoiTimer(false);
-  stopFermiTimer(false);
   stopFruitTimer(false);
   renderNextCard();
   renderMakeMarket();
@@ -1936,394 +1685,6 @@ function formatCash(value) {
 
 function roundCents(value) {
   return Math.round(value * 100) / 100;
-}
-
-function initMathGame() {
-  stopMathTimer(false);
-  mathState = createMathState("ready");
-  renderMath();
-}
-
-function createMathState(phase) {
-  const durationSeconds = Number(mathEls.duration.value);
-  return {
-    phase,
-    mode: mathEls.mode.value,
-    durationSeconds,
-    timeLeft: durationSeconds,
-    timerId: null,
-    question: null,
-    score: 0,
-    correct: 0,
-    wrong: 0,
-    attempts: 0,
-    startedAt: null,
-    questionStartedAt: null,
-    history: [],
-    lastAnswer: null,
-  };
-}
-
-function startMathGame() {
-  if (mathState?.phase === "playing") {
-    finishMathGame();
-    return;
-  }
-
-  mathState = createMathState("playing");
-  mathState.startedAt = Date.now();
-  mathState.question = generateMathQuestion(mathState.mode);
-  mathState.questionStartedAt = Date.now();
-  mathState.timerId = window.setInterval(tickMathClock, 1000);
-  mathEls.typedAnswer.value = "";
-  renderMath();
-}
-
-function stopMathTimer(markPaused = true) {
-  if (mathState?.timerId) {
-    window.clearInterval(mathState.timerId);
-    mathState.timerId = null;
-  }
-  if (markPaused && mathState?.phase === "playing") {
-    mathState.phase = "ready";
-  }
-}
-
-function tickMathClock() {
-  if (!mathState || mathState.phase !== "playing") return;
-  mathState.timeLeft -= 1;
-  if (mathState.timeLeft <= 0) {
-    mathState.timeLeft = 0;
-    finishMathGame();
-    return;
-  }
-  renderMathStatus();
-  mathEls.timer.textContent = `${mathState.timeLeft}s`;
-}
-
-function finishMathGame() {
-  if (!mathState) return;
-  stopMathTimer(false);
-  mathState.phase = "finished";
-  mathState.question = null;
-  mathState.lastAnswer = null;
-  renderMath();
-}
-
-function submitMathAnswer(rawAnswer) {
-  if (!mathState || mathState.phase !== "playing" || !mathState.question) return;
-  const submitted = String(rawAnswer ?? "").trim();
-  if (!submitted) {
-    mathEls.message.textContent = "Enter an answer or choose one of the options.";
-    return;
-  }
-
-  const correct = isMathAnswerCorrect(submitted, mathState.question);
-  const elapsedMs = Date.now() - mathState.questionStartedAt;
-  mathState.attempts += 1;
-  mathState.score += correct ? 1 : -1;
-  mathState.correct += correct ? 1 : 0;
-  mathState.wrong += correct ? 0 : 1;
-  mathState.lastAnswer = { submitted, correct, answer: mathState.question.answerText };
-  mathState.history.unshift({
-    prompt: mathState.question.prompt,
-    submitted,
-    answer: mathState.question.answerText,
-    correct,
-    missed: false,
-    elapsedMs,
-  });
-  mathState.history = mathState.history.slice(0, 28);
-  mathState.question = generateMathQuestion(mathState.mode);
-  mathState.questionStartedAt = Date.now();
-  mathEls.typedAnswer.value = "";
-  mathEls.message.textContent = correct ? "Correct. Next question." : `Wrong. Answer was ${mathState.lastAnswer.answer}.`;
-  renderMath();
-}
-
-function generateMathQuestion(mode) {
-  const selectedMode = mode === "mixed" ? sample(["integers", "decimals", "fractions"]) : mode;
-  if (selectedMode === "decimals") return generateDecimalQuestion();
-  if (selectedMode === "fractions") return generateFractionQuestion();
-  return generateIntegerQuestion();
-}
-
-function generateIntegerQuestion() {
-  const kind = sample(["add", "subtract", "multiply", "divide"]);
-  let prompt;
-  let answer;
-
-  if (kind === "add") {
-    const a = randomInt(18, 180);
-    const b = randomInt(12, 150);
-    prompt = `${a} + ${b}`;
-    answer = a + b;
-  } else if (kind === "subtract") {
-    const a = randomInt(90, 260);
-    const b = randomInt(12, a - 8);
-    prompt = `${a} - ${b}`;
-    answer = a - b;
-  } else if (kind === "multiply") {
-    const a = randomInt(6, 24);
-    const b = randomInt(4, 18);
-    prompt = `${a} x ${b}`;
-    answer = a * b;
-  } else {
-    const b = randomInt(3, 16);
-    answer = randomInt(4, 28);
-    prompt = `${answer * b} / ${b}`;
-  }
-
-  return makeMathQuestion(prompt, String(answer), answer, makeNumericChoices(answer, 0));
-}
-
-function generateDecimalQuestion() {
-  const kind = sample(["add", "subtract", "multiply"]);
-  const oneDecimal = (value) => Math.round(value * 10) / 10;
-  let prompt;
-  let answer;
-
-  if (kind === "add") {
-    const a = oneDecimal(randomInt(20, 220) / 10);
-    const b = oneDecimal(randomInt(15, 180) / 10);
-    answer = oneDecimal(a + b);
-    prompt = `${a.toFixed(1)} + ${b.toFixed(1)}`;
-  } else if (kind === "subtract") {
-    const a = oneDecimal(randomInt(80, 300) / 10);
-    const b = oneDecimal(randomInt(10, Math.floor(a * 10) - 5) / 10);
-    answer = oneDecimal(a - b);
-    prompt = `${a.toFixed(1)} - ${b.toFixed(1)}`;
-  } else {
-    const a = oneDecimal(randomInt(12, 95) / 10);
-    const b = randomInt(2, 9);
-    answer = oneDecimal(a * b);
-    prompt = `${a.toFixed(1)} x ${b}`;
-  }
-
-  return makeMathQuestion(prompt, answer.toFixed(1), answer, makeNumericChoices(answer, 1));
-}
-
-function generateFractionQuestion() {
-  const denominators = [3, 4, 5, 6, 8, 10, 12];
-  const d1 = sample(denominators);
-  const d2 = sample(denominators);
-  const n1 = randomInt(1, d1 - 1);
-  const n2 = randomInt(1, d2 - 1);
-  const sign = sample(["+", "-"]);
-  const common = lcm(d1, d2);
-  let numerator = n1 * (common / d1) + (sign === "+" ? 1 : -1) * n2 * (common / d2);
-  if (numerator <= 0) {
-    numerator = Math.abs(numerator) + 1;
-  }
-  const simplified = simplifyFraction(numerator, common);
-  const prompt = `${n1}/${d1} ${sign} ${n2}/${d2}`;
-  const answerText = formatFraction(simplified.n, simplified.d);
-  const choices = makeFractionChoices(simplified.n, simplified.d);
-  return makeMathQuestion(prompt, answerText, simplified.n / simplified.d, choices, "fraction");
-}
-
-function makeMathQuestion(prompt, answerText, answerValue, choices, kind = "numeric") {
-  return {
-    prompt,
-    answerText,
-    answerValue,
-    choices: shuffle(choices),
-    kind,
-  };
-}
-
-function makeNumericChoices(answer, decimals) {
-  const offsets = shuffle([-12, -7, -3, 4, 9, 15]);
-  const choices = new Set([formatMathChoiceNumber(answer, decimals)]);
-  offsets.forEach((offset) => {
-    if (choices.size >= 4) return;
-    const scale = decimals ? 10 : 1;
-    const candidate = Math.max(0, Math.round(answer * scale + offset) / scale);
-    choices.add(formatMathChoiceNumber(candidate, decimals));
-  });
-  return [...choices].slice(0, 4);
-}
-
-function makeFractionChoices(numerator, denominator) {
-  const choices = new Set([formatFraction(numerator, denominator)]);
-  const variants = [
-    [numerator + 1, denominator],
-    [Math.max(1, numerator - 1), denominator],
-    [numerator, denominator + 1],
-    [numerator + 1, denominator + 1],
-    [numerator + 2, denominator],
-  ];
-  variants.forEach(([n, d]) => {
-    if (choices.size >= 4) return;
-    const simplified = simplifyFraction(n, d);
-    choices.add(formatFraction(simplified.n, simplified.d));
-  });
-  return [...choices].slice(0, 4);
-}
-
-function formatMathChoiceNumber(value, decimals) {
-  return decimals ? Number(value).toFixed(decimals) : String(Math.round(value));
-}
-
-function isMathAnswerCorrect(input, question) {
-  if (question.kind === "fraction") {
-    const parsed = parseMathNumber(input);
-    return parsed !== null && Math.abs(parsed - question.answerValue) < 0.0001;
-  }
-
-  const parsed = parseMathNumber(input);
-  if (parsed === null) return false;
-  return Math.abs(parsed - question.answerValue) < 0.005;
-}
-
-function parseMathNumber(input) {
-  const cleaned = String(input).trim();
-  if (!cleaned) return null;
-  if (cleaned.includes("/")) {
-    const [rawN, rawD] = cleaned.split("/");
-    const n = Number(rawN);
-    const d = Number(rawD);
-    if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return null;
-    return n / d;
-  }
-  const value = Number(cleaned);
-  return Number.isFinite(value) ? value : null;
-}
-
-function simplifyFraction(numerator, denominator) {
-  const divisor = gcd(Math.abs(numerator), Math.abs(denominator));
-  return {
-    n: numerator / divisor,
-    d: denominator / divisor,
-  };
-}
-
-function formatFraction(numerator, denominator) {
-  if (denominator === 1) return String(numerator);
-  return `${numerator}/${denominator}`;
-}
-
-function gcd(a, b) {
-  let x = a;
-  let y = b;
-  while (y) {
-    [x, y] = [y, x % y];
-  }
-  return x || 1;
-}
-
-function lcm(a, b) {
-  return (a * b) / gcd(a, b);
-}
-
-function getMathElapsedSeconds() {
-  if (!mathState) return 0;
-  if (mathState.phase === "ready") return 0;
-  return mathState.durationSeconds - mathState.timeLeft;
-}
-
-function getMathSpeed() {
-  if (!mathState || mathState.score <= 0) return null;
-  return getMathElapsedSeconds() / mathState.score;
-}
-
-function getMathLeaderboardPoints() {
-  const speed = getMathSpeed();
-  if (speed === null) return 0;
-  const thresholds =
-    mathState.mode === "integers"
-      ? [
-          [3, 3],
-          [3.5, 2],
-          [4.5, 1],
-        ]
-      : [
-          [6, 3],
-          [6.75, 2],
-          [7.5, 1],
-        ];
-  const match = thresholds.find(([seconds]) => speed <= seconds);
-  return match ? match[1] : 0;
-}
-
-function renderMath() {
-  if (!mathState) return;
-  if (activeGame === "math") renderMathStatus();
-  mathEls.phaseLabel.textContent = getMathPhaseLabel();
-  mathEls.startButton.textContent = mathState.phase === "playing" ? "Finish" : "Start";
-  mathEls.submitButton.disabled = mathState.phase !== "playing";
-  mathEls.typedAnswer.disabled = mathState.phase !== "playing";
-  mathEls.mode.disabled = mathState.phase === "playing";
-  mathEls.duration.disabled = mathState.phase === "playing";
-  mathEls.score.textContent = String(mathState.score);
-  mathEls.accuracy.textContent = `${mathState.correct} / ${mathState.wrong}`;
-  const speed = getMathSpeed();
-  mathEls.speed.textContent = speed === null ? "-" : `${speed.toFixed(1)}s / pt`;
-  mathEls.timer.textContent = `${mathState.timeLeft}s`;
-  mathEls.leaderboardPoints.textContent = `${getMathLeaderboardPoints()} pts`;
-
-  if (mathState.phase === "ready") {
-    mathEls.questionText.textContent = "Press Start to begin.";
-    mathEls.choices.innerHTML = "";
-    mathEls.message.textContent = "";
-  } else if (mathState.phase === "finished") {
-    mathEls.questionText.textContent = `Finished: ${mathState.score} net`;
-    mathEls.choices.innerHTML = "";
-    mathEls.message.textContent = "Review your answers and speed score.";
-  } else {
-    mathEls.questionText.textContent = mathState.question.prompt;
-    mathEls.choices.innerHTML = mathState.question.choices
-      .map((choice) => {
-        const marker =
-          mathState.lastAnswer && choice === mathState.lastAnswer.submitted
-            ? mathState.lastAnswer.correct
-              ? "correct"
-              : "incorrect"
-            : "";
-        return `<button class="choice-button ${marker}" type="button" data-math-choice="${choice}">${choice}</button>`;
-      })
-      .join("");
-  }
-
-  renderMathReview();
-}
-
-function getMathPhaseLabel() {
-  if (mathState.phase === "playing") return "Timed test";
-  if (mathState.phase === "finished") return "Review";
-  return "Ready";
-}
-
-function renderMathStatus() {
-  els.statusLabelOne.textContent = "Score";
-  els.statusLabelTwo.textContent = "Time";
-  els.statusLabelThree.textContent = "Correct";
-  els.statusLabelFour.textContent = "Speed";
-  els.bankrollValue.textContent = String(mathState.score);
-  els.roundValue.textContent = `${mathState.timeLeft}s`;
-  els.skillValue.textContent = String(mathState.correct);
-  const speed = getMathSpeed();
-  els.clockValue.textContent = speed === null ? "-" : `${speed.toFixed(1)}s`;
-}
-
-function renderMathReview() {
-  if (!mathState.history.length) {
-    mathEls.review.innerHTML = `<div class="review-item"><strong>No answers yet</strong><span>Correct answers add 1 point; wrong answers subtract 1 point.</span></div>`;
-    return;
-  }
-
-  mathEls.review.innerHTML = mathState.history
-    .map((item) => {
-      const className = item.missed ? "missed" : item.correct ? "correct" : "incorrect";
-      const result = item.missed ? "missed" : item.correct ? "correct" : "wrong";
-      return `
-        <div class="review-item ${className}">
-          <strong>${item.prompt} = ${item.answer}</strong>
-          <span>${result}; submitted ${item.submitted}; ${(item.elapsedMs / 1000).toFixed(1)}s</span>
-        </div>
-      `;
-    })
-    .join("");
 }
 
 function initSequenceGame() {
@@ -3147,269 +2508,6 @@ function renderHanoiReview() {
 
 function formatHanoiTime(ms) {
   return `${(ms / 1000).toFixed(1)}s`;
-}
-
-function initFermiGame() {
-  stopFermiTimer(false);
-  fermiState = createFermiState("ready");
-  renderFermi();
-}
-
-function createFermiState(phase) {
-  const rounds = Number(fermiEls.rounds.value);
-  return {
-    phase,
-    rounds,
-    secondsPerQuestion: Number(fermiEls.time.value),
-    timeLeft: Number(fermiEls.time.value),
-    timerId: null,
-    questionIndex: 0,
-    questions: shuffle(FERMI_QUESTIONS).slice(0, rounds),
-    current: null,
-    score: 0,
-    lastFactor: null,
-    history: [],
-    bots: FERMI_BOTS.map((bot) => ({ ...bot, score: 0, submitted: false, lastEstimate: null })),
-  };
-}
-
-function startOrAdvanceFermi() {
-  if (!fermiState || fermiState.phase === "ready" || fermiState.phase === "finished") {
-    fermiState = createFermiState("answering");
-    beginFermiQuestion();
-    return;
-  }
-
-  if (fermiState.phase === "review") {
-    fermiState.questionIndex += 1;
-    if (fermiState.questionIndex >= fermiState.rounds) {
-      fermiState.phase = "finished";
-      fermiState.current = null;
-      renderFermi();
-      return;
-    }
-    beginFermiQuestion();
-  }
-}
-
-function beginFermiQuestion() {
-  stopFermiTimer(false);
-  fermiState.phase = "answering";
-  fermiState.timeLeft = fermiState.secondsPerQuestion;
-  fermiState.current = fermiState.questions[fermiState.questionIndex];
-  fermiState.bots.forEach((bot) => {
-    bot.submitted = false;
-    bot.lastEstimate = null;
-  });
-  fermiState.timerId = window.setInterval(tickFermiClock, 1000);
-  fermiEls.answer.value = "";
-  fermiEls.message.textContent = "";
-  renderFermi();
-}
-
-function tickFermiClock() {
-  if (!fermiState || fermiState.phase !== "answering") return;
-  fermiState.timeLeft -= 1;
-  updateFermiBotSubmissions();
-  if (fermiState.timeLeft <= 0) {
-    fermiState.timeLeft = 0;
-    submitFermiAnswer(null);
-    return;
-  }
-  renderFermi();
-}
-
-function stopFermiTimer(markReady = true) {
-  if (fermiState?.timerId) {
-    window.clearInterval(fermiState.timerId);
-    fermiState.timerId = null;
-  }
-  if (markReady && fermiState?.phase === "answering") {
-    fermiState.phase = "ready";
-  }
-}
-
-function updateFermiBotSubmissions(force = false) {
-  if (!fermiState?.current) return;
-  const elapsed = fermiState.secondsPerQuestion - fermiState.timeLeft;
-  fermiState.bots.forEach((bot, index) => {
-    const submitAfter = 5 + index * 4;
-    if (!bot.submitted && (force || elapsed >= submitAfter || Math.random() < 0.08)) {
-      bot.submitted = true;
-      bot.lastEstimate = makeFermiBotEstimate(fermiState.current.answer, bot.sigma);
-    }
-  });
-}
-
-function makeFermiBotEstimate(answer, sigma) {
-  const sign = Math.random() < 0.5 ? -1 : 1;
-  const magnitude = Math.exp(Math.random() * sigma * sign);
-  return Math.max(1, Math.round(answer * magnitude));
-}
-
-function submitFermiAnswer(rawAnswer) {
-  if (!fermiState || fermiState.phase !== "answering" || !fermiState.current) return;
-  stopFermiTimer(false);
-  updateFermiBotSubmissions(true);
-
-  const estimate = rawAnswer === null ? null : parseFermiEstimate(rawAnswer);
-  const result = scoreFermiEstimate(estimate, fermiState.current.answer);
-  fermiState.score += result.points;
-  fermiState.lastFactor = result.factor;
-  fermiState.bots.forEach((bot) => {
-    const botResult = scoreFermiEstimate(bot.lastEstimate, fermiState.current.answer);
-    bot.score += botResult.points;
-  });
-
-  fermiState.history.unshift({
-    prompt: fermiState.current.prompt,
-    type: fermiState.current.type,
-    answer: fermiState.current.answer,
-    explanation: fermiState.current.explanation,
-    estimate,
-    points: result.points,
-    factor: result.factor,
-  });
-  fermiState.phase = "review";
-  fermiEls.message.textContent =
-    estimate === null ? "No answer submitted. The Fermi penalty is -2." : `Scored ${result.points} points.`;
-  renderFermi();
-}
-
-function parseFermiEstimate(rawAnswer) {
-  const normalized = String(rawAnswer).trim().replaceAll(",", "");
-  if (!normalized) return null;
-  const value = Number(normalized);
-  return Number.isFinite(value) && value > 0 ? value : null;
-}
-
-function scoreFermiEstimate(estimate, answer) {
-  if (estimate === null) return { points: -2, factor: null };
-  const factor = Math.max(estimate / answer, answer / estimate);
-  let points = 0;
-  if (factor <= 1.1) points = 10;
-  else if (factor <= 1.3) points = 8;
-  else if (factor <= 1.6) points = 6;
-  else if (factor <= 2) points = 4;
-  else if (factor <= 3) points = 2;
-  else if (factor <= 10) points = 1;
-  return { points, factor };
-}
-
-function getFermiLeaderboardPoints() {
-  if (!fermiState) return 0;
-  if (fermiState.score >= 80) return 3;
-  if (fermiState.score >= 60) return 2;
-  if (fermiState.score >= 40) return 1;
-  return 0;
-}
-
-function renderFermi() {
-  if (!fermiState) return;
-  if (activeGame === "fermi") renderFermiStatus();
-  fermiEls.phaseLabel.textContent = getFermiPhaseLabel();
-  fermiEls.nextButton.textContent =
-    fermiState.phase === "ready" || fermiState.phase === "finished"
-      ? "Start"
-      : fermiState.phase === "review"
-        ? fermiState.questionIndex + 1 >= fermiState.rounds
-          ? "Results"
-          : "Next"
-        : "Answering";
-  fermiEls.nextButton.disabled = fermiState.phase === "answering";
-  fermiEls.submitButton.disabled = fermiState.phase !== "answering";
-  fermiEls.answer.disabled = fermiState.phase !== "answering";
-  fermiEls.rounds.disabled = fermiState.phase !== "ready" && fermiState.phase !== "finished";
-  fermiEls.time.disabled = fermiState.phase !== "ready" && fermiState.phase !== "finished";
-  fermiEls.score.textContent = String(fermiState.score);
-  fermiEls.round.textContent = `${Math.min(fermiState.questionIndex + (fermiState.phase === "ready" ? 0 : 1), fermiState.rounds)} / ${fermiState.rounds}`;
-  fermiEls.factor.textContent = fermiState.lastFactor === null ? "-" : `${fermiState.lastFactor.toFixed(2)}x`;
-  fermiEls.timer.textContent = `${fermiState.timeLeft}s`;
-  fermiEls.leaderboardPoints.textContent = `${getFermiLeaderboardPoints()} pts`;
-
-  if (fermiState.phase === "ready") {
-    fermiEls.questionText.textContent = "Press Start to begin.";
-  } else if (fermiState.phase === "finished") {
-    fermiEls.questionText.textContent = `Finished: ${fermiState.score} points`;
-  } else {
-    fermiEls.questionText.textContent = fermiState.current.prompt;
-  }
-
-  renderFermiBots();
-  renderFermiReview();
-}
-
-function getFermiPhaseLabel() {
-  if (fermiState.phase === "answering") return "Estimation phase";
-  if (fermiState.phase === "review") return "Explanation phase";
-  if (fermiState.phase === "finished") return "Final results";
-  return "Ready";
-}
-
-function renderFermiStatus() {
-  els.statusLabelOne.textContent = "Score";
-  els.statusLabelTwo.textContent = "Round";
-  els.statusLabelThree.textContent = "Timer";
-  els.statusLabelFour.textContent = "Bonus";
-  els.bankrollValue.textContent = String(fermiState.score);
-  els.roundValue.textContent = `${Math.min(fermiState.questionIndex + (fermiState.phase === "ready" ? 0 : 1), fermiState.rounds)} / ${fermiState.rounds}`;
-  els.skillValue.textContent = `${fermiState.timeLeft}s`;
-  els.clockValue.textContent = `${getFermiLeaderboardPoints()} pts`;
-}
-
-function renderFermiBots() {
-  fermiEls.botStatus.innerHTML = fermiState.bots
-    .map(
-      (bot) => `
-        <div class="bot-chip ${bot.submitted ? "submitted" : ""}">
-          ${bot.name}<br>${bot.submitted ? "Submitted" : "Thinking"}
-        </div>
-      `,
-    )
-    .join("");
-}
-
-function renderFermiReview() {
-  if (!fermiState.history.length) {
-    fermiEls.review.innerHTML = `<div class="review-item"><strong>No estimates yet</strong><span>Scoring is symmetric by factor error; no answer is -2.</span></div>`;
-    return;
-  }
-
-  const leaderboard = getFermiLeaderboard();
-  const latest = fermiState.history[0];
-  const latestHtml =
-    fermiState.phase === "review" || fermiState.phase === "finished"
-      ? `
-        <div class="review-item ${latest.points > 0 ? "correct" : latest.points < 0 ? "missed" : "incorrect"}">
-          <strong>Answer: ${formatLargeNumber(latest.answer)} | You: ${latest.estimate === null ? "No answer" : formatLargeNumber(latest.estimate)}</strong>
-          <span>${latest.factor === null ? "No factor" : `${latest.factor.toFixed(2)}x off`}; ${latest.points} points. ${latest.explanation}</span>
-        </div>
-      `
-      : "";
-
-  const leaderboardHtml = leaderboard
-    .map(
-      (row, index) => `
-        <div class="review-item ${row.name === "You" ? "correct" : ""}">
-          <strong>${index + 1}. ${row.name}: ${row.score} pts</strong>
-          <span>${row.name === "You" ? "Your current rank" : "Simulated bot"}</span>
-        </div>
-      `,
-    )
-    .join("");
-
-  fermiEls.review.innerHTML = latestHtml + leaderboardHtml;
-}
-
-function getFermiLeaderboard() {
-  return [
-    { name: "You", score: fermiState.score },
-    ...fermiState.bots.map((bot) => ({ name: bot.name, score: bot.score })),
-  ].sort((a, b) => b.score - a.score);
-}
-
-function formatLargeNumber(value) {
-  return Math.round(value).toLocaleString("en-US");
 }
 
 function initFruitGame() {
@@ -4541,22 +3639,6 @@ etfEls.board.addEventListener("click", (event) => {
   executeEtfTrade(tradeButton.dataset.etfSymbol, tradeButton.dataset.etfTrade);
 });
 
-mathEls.resetButton.addEventListener("click", initMathGame);
-mathEls.startButton.addEventListener("click", startMathGame);
-mathEls.submitButton.addEventListener("click", () => {
-  submitMathAnswer(mathEls.typedAnswer.value);
-});
-mathEls.typedAnswer.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    submitMathAnswer(mathEls.typedAnswer.value);
-  }
-});
-mathEls.choices.addEventListener("click", (event) => {
-  const choice = event.target.closest("[data-math-choice]");
-  if (!choice) return;
-  submitMathAnswer(choice.dataset.mathChoice);
-});
-
 sequenceEls.resetButton.addEventListener("click", initSequenceGame);
 sequenceEls.startButton.addEventListener("click", startSequenceGame);
 sequenceEls.skipButton.addEventListener("click", () => recordSequenceAnswer(null, "skipped"));
@@ -4605,17 +3687,6 @@ hanoiEls.board.addEventListener("drop", (event) => {
 document.addEventListener("mouseup", finishHanoiPointerDrag);
 document.addEventListener("touchend", finishHanoiPointerDrag);
 
-fermiEls.resetButton.addEventListener("click", initFermiGame);
-fermiEls.nextButton.addEventListener("click", startOrAdvanceFermi);
-fermiEls.submitButton.addEventListener("click", () => {
-  submitFermiAnswer(fermiEls.answer.value);
-});
-fermiEls.answer.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    submitFermiAnswer(fermiEls.answer.value);
-  }
-});
-
 fruitEls.resetButton.addEventListener("click", initFruitGame);
 fruitEls.startButton.addEventListener("click", toggleFruitTimer);
 fruitEls.tickButton.addEventListener("click", updateFruitMarket);
@@ -4650,10 +3721,8 @@ cardsMarketEls.response.addEventListener("click", (event) => {
 setupGameTabs();
 startGame();
 initEtfGame();
-initMathGame();
 initSequenceGame();
 initHanoiGame();
-initFermiGame();
 initFruitGame();
 initNextCardGame();
 initMakeMarketGame();

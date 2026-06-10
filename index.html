@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Market Making Practice</title>
-    <link rel="stylesheet" href="./styles.css?v=sequence-preview-2" />
+    <link rel="stylesheet" href="./styles.css?v=generic-names-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -20,7 +20,7 @@
           </div>
           <div>
             <p class="eyebrow" id="appEyebrow">Market making practice</p>
-            <h1 id="appTitle">Probability Betting</h1>
+            <h1 id="appTitle">Odds Calibration Lab</h1>
           </div>
         </div>
 
@@ -45,16 +45,14 @@
       </header>
 
       <nav class="game-tabs" aria-label="Game selector">
-        <button class="game-tab is-active" type="button" data-game-tab="probability">Probability Betting</button>
-        <button class="game-tab" type="button" data-game-tab="etf">ETF Challenge</button>
-        <button class="game-tab" type="button" data-game-tab="math">Math Challenge</button>
-        <button class="game-tab" type="button" data-game-tab="sequence">Sequence Match</button>
-        <button class="game-tab" type="button" data-game-tab="hanoi">Hanoi Towers</button>
-        <button class="game-tab" type="button" data-game-tab="fermi">Fermi Questions</button>
-        <button class="game-tab" type="button" data-game-tab="fruit">Fruit Market</button>
-        <button class="game-tab" type="button" data-game-tab="next-card">Next Card</button>
-        <button class="game-tab" type="button" data-game-tab="make-market">Make Me a Market</button>
-        <button class="game-tab" type="button" data-game-tab="cards-market">Market of Cards</button>
+        <button class="game-tab is-active" type="button" data-game-tab="probability">Odds Calibration Lab</button>
+        <button class="game-tab" type="button" data-game-tab="etf">Basket Arbitrage Drill</button>
+        <button class="game-tab" type="button" data-game-tab="sequence">Sequence Recall Sprint</button>
+        <button class="game-tab" type="button" data-game-tab="hanoi">Tower Transfer Sprint</button>
+        <button class="game-tab" type="button" data-game-tab="fruit">Produce Quote Drill</button>
+        <button class="game-tab" type="button" data-game-tab="next-card">Card Edge Trainer</button>
+        <button class="game-tab" type="button" data-game-tab="make-market">Quote Range Trainer</button>
+        <button class="game-tab" type="button" data-game-tab="cards-market">Card Market Simulator</button>
       </nav>
 
       <section class="game-view is-active" id="probabilityGame" data-game-view="probability">
@@ -212,85 +210,6 @@
         </main>
       </section>
 
-      <section class="game-view" id="mathGame" data-game-view="math">
-        <main class="table-surface practice-surface" aria-labelledby="mathTitle">
-          <div class="surface-head">
-            <div>
-              <p class="eyebrow" id="mathPhaseLabel">Ready</p>
-              <h2 id="mathTitle">Answer as many questions as possible</h2>
-            </div>
-            <div class="round-controls">
-              <button class="secondary-button" id="mathResetButton" type="button">Reset</button>
-              <button class="primary-button" id="mathStartButton" type="button">Start</button>
-            </div>
-          </div>
-
-          <section class="control-band practice-controls" aria-label="Math challenge controls">
-            <div class="control-row">
-              <label for="mathMode">Mode</label>
-              <select id="mathMode">
-                <option value="integers" selected>Integers</option>
-                <option value="decimals">Decimals</option>
-                <option value="fractions">Fractions</option>
-                <option value="mixed">Mixed</option>
-              </select>
-            </div>
-            <div class="control-row">
-              <label for="mathDuration">Duration</label>
-              <select id="mathDuration">
-                <option value="60" selected>60s practice</option>
-                <option value="360">6 minutes</option>
-                <option value="420">7 minutes</option>
-                <option value="480">8 minutes</option>
-              </select>
-            </div>
-            <div class="control-row">
-              <label for="mathTypedAnswer">Typed answer</label>
-              <input id="mathTypedAnswer" type="text" placeholder="Type answer" autocomplete="off" />
-            </div>
-            <button class="secondary-button" id="mathSubmitButton" type="button">Submit typed</button>
-          </section>
-
-          <section class="round-summary" aria-label="Math challenge summary">
-            <div>
-              <span>Score</span>
-              <strong id="mathScore">0</strong>
-            </div>
-            <div>
-              <span>Correct / Wrong</span>
-              <strong id="mathAccuracy">0 / 0</strong>
-            </div>
-            <div>
-              <span>Speed</span>
-              <strong id="mathSpeed">-</strong>
-            </div>
-          </section>
-
-          <div class="message-line" id="mathMessage" role="status"></div>
-
-          <section class="practice-grid">
-            <article class="question-panel">
-              <div class="panel-heading">
-                <p class="eyebrow">Question</p>
-                <strong id="mathTimer">60s</strong>
-              </div>
-              <div class="question-body">
-                <div class="question-text" id="mathQuestionText">Press Start to begin.</div>
-                <div class="choice-grid" id="mathChoices"></div>
-              </div>
-            </article>
-
-            <article class="review-panel">
-              <div class="panel-heading">
-                <p class="eyebrow">Review</p>
-                <strong id="mathLeaderboardPoints">0 pts</strong>
-              </div>
-              <div class="review-list" id="mathReview"></div>
-            </article>
-          </section>
-        </main>
-      </section>
-
       <section class="game-view" id="sequenceGame" data-game-view="sequence">
         <main class="table-surface practice-surface" aria-labelledby="sequenceTitle">
           <div class="surface-head">
@@ -438,83 +357,6 @@
               </div>
               <div class="hanoi-stats" id="hanoiStats"></div>
               <div class="review-list" id="hanoiReview"></div>
-            </article>
-          </section>
-        </main>
-      </section>
-
-      <section class="game-view" id="fermiGame" data-game-view="fermi">
-        <main class="table-surface practice-surface" aria-labelledby="fermiTitle">
-          <div class="surface-head">
-            <div>
-              <p class="eyebrow" id="fermiPhaseLabel">Ready</p>
-              <h2 id="fermiTitle">Estimate the answer without being off by orders of magnitude</h2>
-            </div>
-            <div class="round-controls">
-              <button class="secondary-button" id="fermiResetButton" type="button">Reset</button>
-              <button class="primary-button" id="fermiNextButton" type="button">Start</button>
-            </div>
-          </div>
-
-          <section class="control-band practice-controls" aria-label="Fermi question controls">
-            <div class="control-row">
-              <label for="fermiRounds">Rounds</label>
-              <select id="fermiRounds">
-                <option value="5" selected>5 questions</option>
-                <option value="8">8 questions</option>
-                <option value="10">10 questions</option>
-              </select>
-            </div>
-            <div class="control-row">
-              <label for="fermiTime">Time per question</label>
-              <select id="fermiTime">
-                <option value="30" selected>30 seconds</option>
-                <option value="45">45 seconds</option>
-                <option value="60">60 seconds</option>
-              </select>
-            </div>
-            <div class="control-row">
-              <label for="fermiAnswer">Numeric estimate</label>
-              <input id="fermiAnswer" type="text" placeholder="Example: 500000" autocomplete="off" />
-            </div>
-            <button class="secondary-button" id="fermiSubmitButton" type="button">Submit</button>
-          </section>
-
-          <section class="round-summary" aria-label="Fermi challenge summary">
-            <div>
-              <span>Total score</span>
-              <strong id="fermiScore">0</strong>
-            </div>
-            <div>
-              <span>Round</span>
-              <strong id="fermiRound">0 / 5</strong>
-            </div>
-            <div>
-              <span>Last factor</span>
-              <strong id="fermiFactor">-</strong>
-            </div>
-          </section>
-
-          <div class="message-line" id="fermiMessage" role="status"></div>
-
-          <section class="practice-grid">
-            <article class="question-panel">
-              <div class="panel-heading">
-                <p class="eyebrow">Question</p>
-                <strong id="fermiTimer">30s</strong>
-              </div>
-              <div class="question-body">
-                <div class="question-text fermi-question-text" id="fermiQuestionText">Press Start to begin.</div>
-                <div class="fermi-bots" id="fermiBotStatus"></div>
-              </div>
-            </article>
-
-            <article class="review-panel">
-              <div class="panel-heading">
-                <p class="eyebrow">Explanation</p>
-                <strong id="fermiLeaderboardPoints">0 pts</strong>
-              </div>
-              <div class="review-list" id="fermiReview"></div>
             </article>
           </section>
         </main>
@@ -788,7 +630,7 @@
             </div>
           </div>
 
-          <section class="control-band practice-controls" aria-label="Market of Cards controls">
+          <section class="control-band practice-controls" aria-label="Card market simulator controls">
             <div class="control-row">
               <label for="cardsMarketAce">Ace rule</label>
               <select id="cardsMarketAce">
@@ -807,7 +649,7 @@
             <button class="secondary-button" id="cardsMarketQuoteButton" type="button">Submit quote</button>
           </section>
 
-          <section class="round-summary" aria-label="Market of Cards summary">
+          <section class="round-summary" aria-label="Card market simulator summary">
             <div>
               <span>Position</span>
               <strong id="cardsMarketPosition">0</strong>
@@ -853,6 +695,6 @@
       </section>
     </div>
 
-    <script src="./game.js?v=sequence-preview-2"></script>
+    <script src="./game.js?v=generic-names-1"></script>
   </body>
 </html>
