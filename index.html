@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Market Making Practice</title>
-    <link rel="stylesheet" href="./styles.css?v=sequence-match-fix-1" />
+    <link rel="stylesheet" href="./styles.css?v=hanoi-towers-2" />
   </head>
   <body>
     <div class="app-shell">
@@ -49,6 +49,7 @@
         <button class="game-tab" type="button" data-game-tab="etf">ETF Challenge</button>
         <button class="game-tab" type="button" data-game-tab="math">Math Challenge</button>
         <button class="game-tab" type="button" data-game-tab="sequence">Sequence Match</button>
+        <button class="game-tab" type="button" data-game-tab="hanoi">Hanoi Towers</button>
         <button class="game-tab" type="button" data-game-tab="fermi">Fermi Questions</button>
         <button class="game-tab" type="button" data-game-tab="fruit">Fruit Market</button>
         <button class="game-tab" type="button" data-game-tab="next-card">Next Card</button>
@@ -363,6 +364,80 @@
               </div>
               <div class="sequence-stats" id="sequenceStats"></div>
               <div class="review-list" id="sequenceReview"></div>
+            </article>
+          </section>
+        </main>
+      </section>
+
+      <section class="game-view" id="hanoiGame" data-game-view="hanoi">
+        <main class="table-surface practice-surface" aria-labelledby="hanoiTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="hanoiPhaseLabel">Ready</p>
+              <h2 id="hanoiTitle">Move every block to the third pole</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="hanoiResetButton" type="button">Reset</button>
+              <button class="primary-button" id="hanoiStartButton" type="button">Start</button>
+            </div>
+          </div>
+
+          <section class="control-band hanoi-controls" aria-label="Hanoi controls">
+            <div class="control-row">
+              <label for="hanoiStartLevel">Starting level</label>
+              <select id="hanoiStartLevel">
+                <option value="3" selected>3 blocks</option>
+                <option value="4">4 blocks</option>
+                <option value="5">5 blocks</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="hanoiMode">Progression</label>
+              <select id="hanoiMode">
+                <option value="adaptive" selected>Adaptive</option>
+                <option value="fixed">Fixed blocks</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label>Rule</label>
+              <input type="text" value="Never place a larger block on a smaller block" disabled />
+            </div>
+            <button class="secondary-button" id="hanoiNextButton" type="button">Next puzzle</button>
+          </section>
+
+          <section class="round-summary" aria-label="Hanoi summary">
+            <div>
+              <span>Level</span>
+              <strong id="hanoiLevel">3 blocks</strong>
+            </div>
+            <div>
+              <span>Moves / optimal</span>
+              <strong id="hanoiMoves">0 / 0</strong>
+            </div>
+            <div>
+              <span>Time</span>
+              <strong id="hanoiTimer">0.0s</strong>
+            </div>
+          </section>
+
+          <div class="message-line" id="hanoiMessage" role="status"></div>
+
+          <section class="hanoi-layout">
+            <article class="question-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Board</p>
+                <strong id="hanoiTargetLabel">Goal: pole 3</strong>
+              </div>
+              <div class="hanoi-board" id="hanoiBoard" aria-label="Towers of Hanoi board"></div>
+            </article>
+
+            <article class="review-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Performance</p>
+                <strong id="hanoiScore">0 pts</strong>
+              </div>
+              <div class="hanoi-stats" id="hanoiStats"></div>
+              <div class="review-list" id="hanoiReview"></div>
             </article>
           </section>
         </main>
@@ -778,6 +853,6 @@
       </section>
     </div>
 
-    <script src="./game.js?v=sequence-match-fix-1"></script>
+    <script src="./game.js?v=hanoi-towers-2"></script>
   </body>
 </html>

@@ -1026,6 +1026,17 @@ button {
   align-items: start;
 }
 
+.hanoi-controls {
+  grid-template-columns: repeat(3, minmax(150px, 220px)) auto;
+}
+
+.hanoi-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.55fr);
+  gap: 14px;
+  align-items: start;
+}
+
 .question-panel,
 .review-panel {
   min-width: 0;
@@ -1124,6 +1135,157 @@ button {
 }
 
 .sequence-stats strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.hanoi-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+  min-height: 430px;
+  background: linear-gradient(180deg, #ffffff 0%, var(--surface-soft) 100%);
+}
+
+.hanoi-pole {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-width: 0;
+  min-height: 380px;
+  padding: 16px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.hanoi-pole.selected {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 2px var(--green-soft);
+}
+
+.hanoi-pole.goal {
+  background: linear-gradient(180deg, #ffffff 0%, var(--blue-soft) 180%);
+}
+
+.hanoi-pole-line {
+  position: absolute;
+  left: 50%;
+  bottom: 46px;
+  width: 10px;
+  height: 280px;
+  border-radius: 999px 999px 0 0;
+  transform: translateX(-50%);
+  background: #c4cbbb;
+}
+
+.hanoi-stack {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  min-height: 298px;
+  padding-top: 12px;
+}
+
+.hanoi-block {
+  width: var(--disk-width);
+  min-width: 44px;
+  min-height: 34px;
+  border: 1px solid rgba(31, 36, 32, 0.24);
+  border-radius: 7px;
+  color: #ffffff;
+  font-weight: 900;
+  text-align: center;
+  box-shadow: 0 6px 14px rgba(31, 36, 32, 0.12);
+}
+
+.hanoi-block.top {
+  cursor: grab;
+}
+
+.hanoi-block.top:active {
+  cursor: grabbing;
+}
+
+.hanoi-block.dragging {
+  opacity: 0.62;
+  transform: translateY(-2px);
+}
+
+.hanoi-block.disk-1 {
+  background: var(--green);
+}
+
+.hanoi-block.disk-2 {
+  background: var(--blue);
+}
+
+.hanoi-block.disk-3 {
+  background: var(--amber);
+}
+
+.hanoi-block.disk-4 {
+  background: #7b5da8;
+}
+
+.hanoi-block.disk-5 {
+  background: #237c8d;
+}
+
+.hanoi-block.disk-6 {
+  background: #9b4f45;
+}
+
+.hanoi-block.disk-7 {
+  background: #48505e;
+}
+
+.hanoi-base {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  border-radius: 7px;
+  background: #dfe4d9;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.hanoi-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.hanoi-stats div {
+  min-height: 58px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.hanoi-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.hanoi-stats strong {
   display: block;
   margin-top: 2px;
   font-size: 18px;
@@ -1467,6 +1629,7 @@ button {
   .etf-board,
   .practice-grid,
   .sequence-layout,
+  .hanoi-layout,
   .fruit-layout,
   .card-betting-layout,
   .cards-market-layout {
@@ -1484,6 +1647,7 @@ button {
   .score-panel,
   .control-band,
   .sequence-stats,
+  .hanoi-stats,
   .instrument-column,
   .etf-reference,
   .game-tabs {
@@ -1549,6 +1713,23 @@ button {
   .sequence-option {
     min-height: 50px;
     font-size: 22px;
+  }
+
+  .hanoi-board {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .hanoi-pole {
+    min-height: 270px;
+  }
+
+  .hanoi-pole-line {
+    height: 178px;
+  }
+
+  .hanoi-stack {
+    min-height: 196px;
   }
 
   .choice-grid {

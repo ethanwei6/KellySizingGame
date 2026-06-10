@@ -87,6 +87,24 @@ const sequenceEls = {
   review: document.querySelector("#sequenceReview"),
 };
 
+const hanoiEls = {
+  phaseLabel: document.querySelector("#hanoiPhaseLabel"),
+  resetButton: document.querySelector("#hanoiResetButton"),
+  startButton: document.querySelector("#hanoiStartButton"),
+  nextButton: document.querySelector("#hanoiNextButton"),
+  startLevel: document.querySelector("#hanoiStartLevel"),
+  mode: document.querySelector("#hanoiMode"),
+  level: document.querySelector("#hanoiLevel"),
+  moves: document.querySelector("#hanoiMoves"),
+  timer: document.querySelector("#hanoiTimer"),
+  message: document.querySelector("#hanoiMessage"),
+  targetLabel: document.querySelector("#hanoiTargetLabel"),
+  board: document.querySelector("#hanoiBoard"),
+  score: document.querySelector("#hanoiScore"),
+  stats: document.querySelector("#hanoiStats"),
+  review: document.querySelector("#hanoiReview"),
+};
+
 const fermiEls = {
   phaseLabel: document.querySelector("#fermiPhaseLabel"),
   resetButton: document.querySelector("#fermiResetButton"),
@@ -287,6 +305,15 @@ const SEQUENCE_CONFUSABLES = {
   8: ["B", "S", "3"],
   9: ["G", "Q"],
 };
+const HANOI_MAX_BLOCKS = 7;
+const HANOI_GOAL_ROD = 2;
+const HANOI_MIN_OPTIMAL = {
+  3: 5,
+  4: 8,
+  5: 12,
+  6: 17,
+  7: 24,
+};
 const FERMI_BOTS = [
   { name: "Ada", sigma: 0.45 },
   { name: "Bo", sigma: 0.7 },
@@ -450,6 +477,9 @@ let state;
 let etfState;
 let mathState;
 let sequenceState;
+let hanoiState;
+let hanoiPointerDrag = null;
+let hanoiSuppressNextClick = false;
 let fermiState;
 let fruitState;
 let nextCardState;
@@ -1381,6 +1411,7 @@ function setActiveGame(game) {
     stopEtfTimer();
     stopMathTimer(false);
     stopSequenceTimer(false);
+    stopHanoiTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
@@ -1396,6 +1427,7 @@ function setActiveGame(game) {
     els.appTitle.textContent = "ETF Challenge";
     stopMathTimer(false);
     stopSequenceTimer(false);
+    stopHanoiTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
@@ -1410,6 +1442,7 @@ function setActiveGame(game) {
     els.appTitle.textContent = "Math Challenge";
     stopEtfTimer();
     stopSequenceTimer(false);
+    stopHanoiTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     if (mathState?.phase === "playing" && !mathState.timerId) {
@@ -1427,6 +1460,7 @@ function setActiveGame(game) {
     els.appTitle.textContent = "Sequence Match";
     stopEtfTimer();
     stopMathTimer(false);
+    stopHanoiTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     if (sequenceState?.phase === "playing" && !sequenceState.timerId) {
@@ -1439,12 +1473,31 @@ function setActiveGame(game) {
     return;
   }
 
+  if (game === "hanoi") {
+    els.appEyebrow.textContent = "Optiver puzzle drill";
+    els.appTitle.textContent = "Hanoi Towers";
+    stopEtfTimer();
+    stopMathTimer(false);
+    stopSequenceTimer(false);
+    stopFermiTimer(false);
+    stopFruitTimer(false);
+    if (hanoiState?.phase === "playing" && !hanoiState.timerId) {
+      startHanoiTimer();
+    }
+    renderNextCard();
+    renderMakeMarket();
+    renderCardsMarket();
+    renderHanoi();
+    return;
+  }
+
   if (game === "fermi") {
     els.appEyebrow.textContent = "Estimation practice";
     els.appTitle.textContent = "Fermi Questions";
     stopEtfTimer();
     stopMathTimer(false);
     stopSequenceTimer(false);
+    stopHanoiTimer(false);
     stopFruitTimer(false);
     if (fermiState?.phase === "answering" && !fermiState.timerId) {
       fermiState.timerId = window.setInterval(tickFermiClock, 1000);
@@ -1462,6 +1515,7 @@ function setActiveGame(game) {
     stopEtfTimer();
     stopMathTimer(false);
     stopSequenceTimer(false);
+    stopHanoiTimer(false);
     stopFermiTimer(false);
     if (fruitState?.phase === "running" && !fruitState.timerId) {
       startFruitTimer();
@@ -1479,6 +1533,7 @@ function setActiveGame(game) {
     stopEtfTimer();
     stopMathTimer(false);
     stopSequenceTimer(false);
+    stopHanoiTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     renderMakeMarket();
@@ -1493,6 +1548,7 @@ function setActiveGame(game) {
     stopEtfTimer();
     stopMathTimer(false);
     stopSequenceTimer(false);
+    stopHanoiTimer(false);
     stopFermiTimer(false);
     stopFruitTimer(false);
     renderNextCard();
@@ -1506,6 +1562,7 @@ function setActiveGame(game) {
   stopEtfTimer();
   stopMathTimer(false);
   stopSequenceTimer(false);
+  stopHanoiTimer(false);
   stopFermiTimer(false);
   stopFruitTimer(false);
   renderNextCard();
@@ -2596,6 +2653,453 @@ function renderSequenceReview() {
       `;
     })
     .join("");
+}
+
+function initHanoiGame() {
+  stopHanoiTimer(false);
+  hanoiState = createHanoiState("ready");
+  renderHanoi();
+}
+
+function createHanoiState(phase, diskCount = Number(hanoiEls.startLevel.value)) {
+  return {
+    phase,
+    mode: hanoiEls.mode.value,
+    diskCount,
+    rods: [[], [], []],
+    initialRods: [[], [], []],
+    optimalMoves: 0,
+    moves: 0,
+    startedAt: null,
+    elapsedMs: 0,
+    timerId: null,
+    selectedRod: null,
+    score: 0,
+    completed: [],
+    history: [],
+    lastResult: null,
+  };
+}
+
+function startOrAdvanceHanoi() {
+  if (!hanoiState || hanoiState.phase === "ready") {
+    startHanoiPuzzle(Number(hanoiEls.startLevel.value));
+    return;
+  }
+
+  if (hanoiState.phase === "playing") {
+    resetHanoiPuzzle();
+    return;
+  }
+
+  startHanoiPuzzle(getNextHanoiDiskCount());
+}
+
+function startHanoiPuzzle(diskCount) {
+  stopHanoiTimer(false);
+  const puzzle = generateHanoiPuzzle(diskCount);
+  const completed = hanoiState?.completed ?? [];
+  hanoiState = {
+    ...createHanoiState("playing", diskCount),
+    rods: cloneRods(puzzle.rods),
+    initialRods: cloneRods(puzzle.rods),
+    optimalMoves: puzzle.optimalMoves,
+    startedAt: Date.now(),
+    completed,
+  };
+  hanoiEls.message.textContent = "";
+  startHanoiTimer();
+  renderHanoi();
+}
+
+function resetHanoiPuzzle() {
+  if (!hanoiState || !hanoiState.initialRods.some((rod) => rod.length)) {
+    initHanoiGame();
+    return;
+  }
+
+  stopHanoiTimer(false);
+  hanoiState = {
+    ...hanoiState,
+    phase: "playing",
+    rods: cloneRods(hanoiState.initialRods),
+    moves: 0,
+    elapsedMs: 0,
+    startedAt: Date.now(),
+    selectedRod: null,
+    history: [],
+    lastResult: null,
+  };
+  hanoiEls.message.textContent = "";
+  startHanoiTimer();
+  renderHanoi();
+}
+
+function stopHanoiTimer(markPaused = true) {
+  if (hanoiState?.timerId) {
+    window.clearInterval(hanoiState.timerId);
+    hanoiState.timerId = null;
+  }
+  if (markPaused && hanoiState?.phase === "playing") {
+    hanoiState.phase = "ready";
+  }
+}
+
+function startHanoiTimer() {
+  if (!hanoiState || hanoiState.phase !== "playing") return;
+  if (hanoiState.timerId) window.clearInterval(hanoiState.timerId);
+  hanoiState.timerId = window.setInterval(tickHanoiClock, 100);
+}
+
+function tickHanoiClock() {
+  if (!hanoiState || hanoiState.phase !== "playing") return;
+  hanoiState.elapsedMs = Date.now() - hanoiState.startedAt;
+  hanoiEls.timer.textContent = formatHanoiTime(hanoiState.elapsedMs);
+  if (activeGame === "hanoi") {
+    els.clockValue.textContent = formatHanoiTime(hanoiState.elapsedMs);
+  }
+}
+
+function generateHanoiPuzzle(diskCount) {
+  let best = null;
+  const minOptimal = HANOI_MIN_OPTIMAL[diskCount] ?? diskCount + 2;
+
+  for (let attempt = 0; attempt < 160; attempt += 1) {
+    const assignment = Array.from({ length: diskCount }, () => String(randomInt(0, 1))).join("");
+    if (!assignment.includes("0") || !assignment.includes("1")) continue;
+    const optimalMoves = getHanoiOptimalMoves(assignment);
+    const rods = hanoiStateToRods(assignment);
+    if (!best || optimalMoves > best.optimalMoves) {
+      best = { rods, optimalMoves };
+    }
+    if (optimalMoves >= minOptimal) {
+      return { rods, optimalMoves };
+    }
+  }
+
+  if (best) return best;
+  const fallback = "0".repeat(diskCount);
+  return {
+    rods: hanoiStateToRods(fallback),
+    optimalMoves: getHanoiOptimalMoves(fallback),
+  };
+}
+
+function getHanoiOptimalMoves(startState) {
+  const goal = String(HANOI_GOAL_ROD).repeat(startState.length);
+  if (startState === goal) return 0;
+  const queue = [startState];
+  const distance = new Map([[startState, 0]]);
+
+  for (let head = 0; head < queue.length; head += 1) {
+    const stateKey = queue[head];
+    const currentDistance = distance.get(stateKey);
+    for (const nextState of getHanoiNextStates(stateKey)) {
+      if (distance.has(nextState)) continue;
+      const nextDistance = currentDistance + 1;
+      if (nextState === goal) return nextDistance;
+      distance.set(nextState, nextDistance);
+      queue.push(nextState);
+    }
+  }
+
+  return 0;
+}
+
+function getHanoiNextStates(stateKey) {
+  const topDisks = getHanoiTopDisks(stateKey);
+  const states = [];
+  for (let from = 0; from < 3; from += 1) {
+    const disk = topDisks[from];
+    if (!disk) continue;
+    for (let to = 0; to < 3; to += 1) {
+      if (from === to) continue;
+      const destinationTop = topDisks[to];
+      if (destinationTop && disk > destinationTop) continue;
+      const chars = stateKey.split("");
+      chars[disk - 1] = String(to);
+      states.push(chars.join(""));
+    }
+  }
+  return states;
+}
+
+function getHanoiTopDisks(stateKey) {
+  const topDisks = [null, null, null];
+  for (let disk = 1; disk <= stateKey.length; disk += 1) {
+    const rod = Number(stateKey[disk - 1]);
+    if (topDisks[rod] === null) topDisks[rod] = disk;
+  }
+  return topDisks;
+}
+
+function hanoiStateToRods(stateKey) {
+  const rods = [[], [], []];
+  for (let disk = stateKey.length; disk >= 1; disk -= 1) {
+    rods[Number(stateKey[disk - 1])].push(disk);
+  }
+  return rods;
+}
+
+function cloneRods(rods) {
+  return rods.map((rod) => [...rod]);
+}
+
+function getNextHanoiDiskCount() {
+  if (!hanoiState) return Number(hanoiEls.startLevel.value);
+  if (hanoiState.mode === "fixed" || !hanoiState.lastResult) return hanoiState.diskCount;
+  const efficient = hanoiState.lastResult.moves <= hanoiState.lastResult.optimalMoves + Math.max(1, Math.floor(hanoiState.lastResult.optimalMoves * 0.15));
+  return clamp(hanoiState.diskCount + (efficient ? 1 : 0), Number(hanoiEls.startLevel.value), HANOI_MAX_BLOCKS);
+}
+
+function moveHanoiBlock(fromRod, toRod) {
+  if (!hanoiState || hanoiState.phase !== "playing") return;
+  if (fromRod === toRod) {
+    hanoiState.selectedRod = null;
+    renderHanoi();
+    return;
+  }
+
+  const source = hanoiState.rods[fromRod];
+  const destination = hanoiState.rods[toRod];
+  const disk = source[source.length - 1];
+  const destinationTop = destination[destination.length - 1];
+
+  if (!disk) {
+    hanoiEls.message.textContent = "Choose a pole with a top block.";
+    hanoiState.selectedRod = null;
+    renderHanoi();
+    return;
+  }
+
+  if (destinationTop && disk > destinationTop) {
+    hanoiEls.message.textContent = "Illegal move: a larger block cannot go on a smaller block.";
+    hanoiState.selectedRod = fromRod;
+    renderHanoi();
+    return;
+  }
+
+  source.pop();
+  destination.push(disk);
+  hanoiState.moves += 1;
+  hanoiState.selectedRod = null;
+  hanoiState.history.unshift(`Move ${hanoiState.moves}: block ${disk} from pole ${fromRod + 1} to pole ${toRod + 1}`);
+  hanoiState.history = hanoiState.history.slice(0, 20);
+  hanoiEls.message.textContent = "";
+
+  if (isHanoiComplete()) {
+    completeHanoiPuzzle();
+    return;
+  }
+
+  renderHanoi();
+}
+
+function isHanoiComplete() {
+  return hanoiState.rods[HANOI_GOAL_ROD].length === hanoiState.diskCount;
+}
+
+function completeHanoiPuzzle() {
+  hanoiState.elapsedMs = Date.now() - hanoiState.startedAt;
+  stopHanoiTimer(false);
+  hanoiState.phase = "complete";
+  const efficiency = hanoiState.optimalMoves ? hanoiState.optimalMoves / hanoiState.moves : 0;
+  const timeBonus = Math.max(0, 80 - hanoiState.elapsedMs / 1000);
+  const score = Math.max(0, Math.round(100 * efficiency + timeBonus + hanoiState.diskCount * 20));
+  hanoiState.score += score;
+  hanoiState.lastResult = {
+    diskCount: hanoiState.diskCount,
+    moves: hanoiState.moves,
+    optimalMoves: hanoiState.optimalMoves,
+    elapsedMs: hanoiState.elapsedMs,
+    score,
+  };
+  hanoiState.completed.unshift(hanoiState.lastResult);
+  hanoiState.completed = hanoiState.completed.slice(0, 8);
+  renderHanoi();
+}
+
+function handleHanoiRodClick(rodIndex) {
+  if (!hanoiState || hanoiState.phase !== "playing") return;
+  if (hanoiState.selectedRod === null) {
+    if (!hanoiState.rods[rodIndex].length) return;
+    hanoiState.selectedRod = rodIndex;
+    hanoiEls.message.textContent = `Selected pole ${rodIndex + 1}. Choose a destination pole.`;
+    renderHanoi();
+    return;
+  }
+  moveHanoiBlock(hanoiState.selectedRod, rodIndex);
+}
+
+function startHanoiPointerDrag(event) {
+  const block = event.target.closest("[data-hanoi-disk]");
+  if (!block || !block.classList.contains("top") || !hanoiState || hanoiState.phase !== "playing") return;
+  const point = getHanoiEventPoint(event);
+  if (!point) return;
+  hanoiPointerDrag = {
+    fromRod: Number(block.dataset.hanoiSource),
+    block,
+  };
+  block.classList.add("dragging");
+  event.preventDefault();
+}
+
+function finishHanoiPointerDrag(event) {
+  if (!hanoiPointerDrag) return;
+  const { fromRod, block } = hanoiPointerDrag;
+  hanoiPointerDrag = null;
+  block.classList.remove("dragging");
+
+  const point = getHanoiEventPoint(event);
+  if (!point) return;
+  const target = document.elementFromPoint(point.x, point.y);
+  const rod = target?.closest("[data-hanoi-rod]");
+  if (!rod) return;
+  hanoiSuppressNextClick = true;
+  moveHanoiBlock(fromRod, Number(rod.dataset.hanoiRod));
+}
+
+function getHanoiEventPoint(event) {
+  const touch = event.changedTouches?.[0] ?? event.touches?.[0];
+  if (touch) {
+    return { x: touch.clientX, y: touch.clientY };
+  }
+  if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+    return { x: event.clientX, y: event.clientY };
+  }
+  return null;
+}
+
+function renderHanoi() {
+  if (!hanoiState) return;
+  if (activeGame === "hanoi") renderHanoiStatus();
+
+  hanoiEls.phaseLabel.textContent = getHanoiPhaseLabel();
+  hanoiEls.startButton.textContent = hanoiState.phase === "playing" ? "Reset puzzle" : hanoiState.phase === "complete" ? "Next puzzle" : "Start";
+  hanoiEls.nextButton.disabled = hanoiState.phase === "playing";
+  hanoiEls.startLevel.disabled = hanoiState.phase === "playing";
+  hanoiEls.mode.disabled = hanoiState.phase === "playing";
+  hanoiEls.level.textContent = `${hanoiState.diskCount} blocks`;
+  hanoiEls.moves.textContent = `${hanoiState.moves} / ${hanoiState.optimalMoves || "-"}`;
+  hanoiEls.timer.textContent = formatHanoiTime(hanoiState.elapsedMs);
+  hanoiEls.score.textContent = `${hanoiState.score} pts`;
+
+  if (hanoiState.phase === "ready") {
+    hanoiEls.message.textContent = "Press Start to generate a legal starting puzzle on poles 1 and 2.";
+    hanoiEls.board.innerHTML = renderHanoiEmptyBoard();
+  } else {
+    hanoiEls.board.innerHTML = hanoiState.rods.map((rod, index) => renderHanoiRod(rod, index)).join("");
+    if (hanoiState.phase === "complete") {
+      hanoiEls.message.textContent = `Solved in ${hanoiState.moves} moves. Optimal was ${hanoiState.optimalMoves}.`;
+    }
+  }
+
+  renderHanoiStats();
+  renderHanoiReview();
+}
+
+function getHanoiPhaseLabel() {
+  if (hanoiState.phase === "playing") return "Solving";
+  if (hanoiState.phase === "complete") return "Complete";
+  return "Ready";
+}
+
+function renderHanoiStatus() {
+  els.statusLabelOne.textContent = "Level";
+  els.statusLabelTwo.textContent = "Moves";
+  els.statusLabelThree.textContent = "Optimal";
+  els.statusLabelFour.textContent = "Clock";
+  els.bankrollValue.textContent = `${hanoiState.diskCount} blocks`;
+  els.roundValue.textContent = String(hanoiState.moves);
+  els.skillValue.textContent = hanoiState.optimalMoves ? String(hanoiState.optimalMoves) : "-";
+  els.clockValue.textContent = formatHanoiTime(hanoiState.elapsedMs);
+}
+
+function renderHanoiEmptyBoard() {
+  return [0, 1, 2].map((_, index) => renderHanoiRod([], index)).join("");
+}
+
+function renderHanoiRod(rod, index) {
+  const topDisk = rod[rod.length - 1];
+  const selected = hanoiState.selectedRod === index ? " selected" : "";
+  const goal = index === HANOI_GOAL_ROD ? " goal" : "";
+  return `
+    <div class="hanoi-pole${selected}${goal}" data-hanoi-rod="${index}">
+      <div class="hanoi-stack">
+        ${rod
+          .map((disk) => {
+            const isTop = disk === topDisk && hanoiState.phase === "playing";
+            return `
+              <button
+                class="hanoi-block disk-${disk}${isTop ? " top" : ""}"
+                type="button"
+                draggable="${isTop ? "true" : "false"}"
+                data-hanoi-disk="${disk}"
+                data-hanoi-source="${index}"
+                style="--disk-width: ${34 + disk * 9}%"
+              >
+                ${disk}
+              </button>
+            `;
+          })
+          .join("")}
+      </div>
+      <div class="hanoi-pole-line" aria-hidden="true"></div>
+      <div class="hanoi-base">Pole ${index + 1}</div>
+    </div>
+  `;
+}
+
+function renderHanoiStats() {
+  const last = hanoiState.lastResult;
+  const moveDelta = last ? last.moves - last.optimalMoves : null;
+  hanoiEls.stats.innerHTML = `
+    <div><span>Best target</span><strong>${hanoiState.optimalMoves || "-"}</strong></div>
+    <div><span>Move delta</span><strong>${moveDelta === null ? "-" : moveDelta <= 0 ? "Optimal" : `+${moveDelta}`}</strong></div>
+    <div><span>Next level</span><strong>${hanoiState.phase === "complete" ? `${getNextHanoiDiskCount()} blocks` : "-"}</strong></div>
+  `;
+}
+
+function renderHanoiReview() {
+  if (hanoiState.phase === "ready") {
+    hanoiEls.review.innerHTML = `<div class="review-item"><strong>No puzzle yet</strong><span>Generated starts use only poles 1 and 2; the goal is always pole 3.</span></div>`;
+    return;
+  }
+
+  if (hanoiState.phase === "complete" && hanoiState.lastResult) {
+    const result = hanoiState.lastResult;
+    hanoiEls.review.innerHTML = `
+      <div class="review-item ${result.moves === result.optimalMoves ? "correct" : "missed"}">
+        <strong>${result.diskCount} blocks solved in ${result.moves} moves</strong>
+        <span>Optimal ${result.optimalMoves}; time ${formatHanoiTime(result.elapsedMs)}; score +${result.score}</span>
+      </div>
+      ${hanoiState.completed
+        .slice(1)
+        .map(
+          (item) => `
+            <div class="review-item">
+              <strong>${item.diskCount} blocks | ${item.moves}/${item.optimalMoves} moves</strong>
+              <span>${formatHanoiTime(item.elapsedMs)}; +${item.score} pts</span>
+            </div>
+          `,
+        )
+        .join("")}
+    `;
+    return;
+  }
+
+  if (!hanoiState.history.length) {
+    hanoiEls.review.innerHTML = `<div class="review-item"><strong>Drag or click a top block</strong><span>Only the top block on each pole can move.</span></div>`;
+    return;
+  }
+
+  hanoiEls.review.innerHTML = hanoiState.history
+    .map((item) => `<div class="review-item"><strong>${item}</strong></div>`)
+    .join("");
+}
+
+function formatHanoiTime(ms) {
+  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 function initFermiGame() {
@@ -4015,6 +4519,45 @@ sequenceEls.options.addEventListener("click", (event) => {
   recordSequenceAnswer(Number(option.dataset.sequenceOption), "selected");
 });
 
+hanoiEls.resetButton.addEventListener("click", resetHanoiPuzzle);
+hanoiEls.startButton.addEventListener("click", startOrAdvanceHanoi);
+hanoiEls.nextButton.addEventListener("click", () => startHanoiPuzzle(getNextHanoiDiskCount()));
+hanoiEls.board.addEventListener("click", (event) => {
+  if (hanoiSuppressNextClick) {
+    hanoiSuppressNextClick = false;
+    event.preventDefault();
+    return;
+  }
+  const rod = event.target.closest("[data-hanoi-rod]");
+  if (!rod) return;
+  handleHanoiRodClick(Number(rod.dataset.hanoiRod));
+});
+hanoiEls.board.addEventListener("mousedown", startHanoiPointerDrag);
+hanoiEls.board.addEventListener("touchstart", startHanoiPointerDrag, { passive: false });
+hanoiEls.board.addEventListener("dragstart", (event) => {
+  const block = event.target.closest("[data-hanoi-disk]");
+  if (!block || !block.classList.contains("top")) {
+    event.preventDefault();
+    return;
+  }
+  event.dataTransfer.setData("text/plain", block.dataset.hanoiSource);
+  event.dataTransfer.effectAllowed = "move";
+});
+hanoiEls.board.addEventListener("dragover", (event) => {
+  if (event.target.closest("[data-hanoi-rod]")) {
+    event.preventDefault();
+  }
+});
+hanoiEls.board.addEventListener("drop", (event) => {
+  const rod = event.target.closest("[data-hanoi-rod]");
+  if (!rod) return;
+  event.preventDefault();
+  const fromRod = Number(event.dataTransfer.getData("text/plain"));
+  moveHanoiBlock(fromRod, Number(rod.dataset.hanoiRod));
+});
+document.addEventListener("mouseup", finishHanoiPointerDrag);
+document.addEventListener("touchend", finishHanoiPointerDrag);
+
 fermiEls.resetButton.addEventListener("click", initFermiGame);
 fermiEls.nextButton.addEventListener("click", startOrAdvanceFermi);
 fermiEls.submitButton.addEventListener("click", () => {
@@ -4062,6 +4605,7 @@ startGame();
 initEtfGame();
 initMathGame();
 initSequenceGame();
+initHanoiGame();
 initFermiGame();
 initFruitGame();
 initNextCardGame();
