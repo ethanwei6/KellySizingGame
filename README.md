@@ -1,6 +1,6 @@
 # Market Making Practice
 
-A self-contained browser practice site modeled on the public Market Making Games descriptions for Probability Betting and ETF Trading Challenge.
+A self-contained browser practice site modeled on the public Market Making Games descriptions.
 
 ## Run
 
@@ -40,9 +40,57 @@ Use the tabs at the top of the page to switch between games.
 - Trades add or subtract realized P&L, then constituent stock prices reset to reduce the arbitrage while ETF prices keep trending.
 - The score rewards total P&L and profitable-trade accuracy.
 
+### Math Challenge
+
+- Timed mental math with integer, decimal, fraction, and mixed modes.
+- Correct answers add 1 point; wrong answers subtract 1 point.
+- Review shows each attempted question, submitted answer, correct answer, and speed.
+- Leaderboard points follow the seconds-per-net-score thresholds from the source page.
+
+### Fermi Questions
+
+- Players submit numerical estimates for fact and guesstimate questions.
+- Scores use symmetric factor error, so overestimating and underestimating by the same factor are treated equally.
+- No answer receives the source-page penalty.
+- Bot estimates create a simple leaderboard for single-player practice.
+
+### Fruit Market
+
+- Two visible bags contain apples and oranges.
+- True value is total apples times total oranges, adjusted by optional market events.
+- Players buy when value is above ask and sell when value is below bid.
+- Final score is raw P&L multiplied by first-click accuracy.
+
+### Next Card Betting
+
+- A reference card is shown and the next card stays face down until betting resolves.
+- The player chooses higher or lower and sizes the stake from bankroll.
+- Suit count and ace high/low settings change the deck and probabilities.
+- Post-round review reveals higher/lower/equal counts and Kelly stake.
+
+### Make Me a Market
+
+- The player quotes bid/ask spreads around an unknown estimation answer.
+- The computer trades against exploitable quotes.
+- Position and cash are tracked through the quote loop.
+- Final quiz questions are generated from the actual trade history.
+
+### Market of Cards
+
+- The player sees a private two-card hand while bot hands and center cards begin hidden.
+- Card values follow the source rules: number cards x10, red face cards positive, black face cards negative, configurable aces.
+- Players quote or respond to bot quotes, then center cards reveal over rounds.
+- Final P&L settles as cash plus position times the final total card value.
+
 ## Source Basis
 
 The implementation follows the public page mechanics:
 
 - Probability Betting: betting phase, results reveal, game end score breakdown, review phase, Kelly criterion sizing, and dice/card/coin probability events.
 - ETF Challenge: setup quotes, live price updates, bid/ask basket arbitrage rules, Buy ETF / Sell ETF execution, post-trade price reset behavior, and P&L plus accuracy scoring.
+- Math Challenge: timed answer loop, +1/-1 scoring, review, and speed-based leaderboard thresholds.
+- Fermi Questions: estimation phase, explanation phase, logarithmic factor scoring, no-answer penalty, and performance bonus.
+- Fruit Market: bag value calculation, market updates, event modifiers, buy/sell P&L, and first-click accuracy multiplier.
+- Next Card Betting: card reveal, higher/lower settlement, equal-card push, configurable suits/aces, and Kelly review.
+- Make Me a Market: confidence interval, spread-constrained quoting, counterparty trades, position accounting, and final technical questions.
+- Market of Cards: hidden hands, center-card reveals, bid/ask quote-response loop, card value table, and final settlement.

@@ -44,6 +44,12 @@
       <nav class="game-tabs" aria-label="Game selector">
         <button class="game-tab is-active" type="button" data-game-tab="probability">Probability Betting</button>
         <button class="game-tab" type="button" data-game-tab="etf">ETF Challenge</button>
+        <button class="game-tab" type="button" data-game-tab="math">Math Challenge</button>
+        <button class="game-tab" type="button" data-game-tab="fermi">Fermi Questions</button>
+        <button class="game-tab" type="button" data-game-tab="fruit">Fruit Market</button>
+        <button class="game-tab" type="button" data-game-tab="next-card">Next Card</button>
+        <button class="game-tab" type="button" data-game-tab="make-market">Make Me a Market</button>
+        <button class="game-tab" type="button" data-game-tab="cards-market">Market of Cards</button>
       </nav>
 
       <section class="game-view is-active" id="probabilityGame" data-game-view="probability">
@@ -197,6 +203,494 @@
               <strong id="etfScore">Score 0.0</strong>
             </div>
             <div id="etfTape" class="tape-list"></div>
+          </section>
+        </main>
+      </section>
+
+      <section class="game-view" id="mathGame" data-game-view="math">
+        <main class="table-surface practice-surface" aria-labelledby="mathTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="mathPhaseLabel">Ready</p>
+              <h2 id="mathTitle">Answer as many questions as possible</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="mathResetButton" type="button">Reset</button>
+              <button class="primary-button" id="mathStartButton" type="button">Start</button>
+            </div>
+          </div>
+
+          <section class="control-band practice-controls" aria-label="Math challenge controls">
+            <div class="control-row">
+              <label for="mathMode">Mode</label>
+              <select id="mathMode">
+                <option value="integers" selected>Integers</option>
+                <option value="decimals">Decimals</option>
+                <option value="fractions">Fractions</option>
+                <option value="mixed">Mixed</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="mathDuration">Duration</label>
+              <select id="mathDuration">
+                <option value="60" selected>60s practice</option>
+                <option value="360">6 minutes</option>
+                <option value="420">7 minutes</option>
+                <option value="480">8 minutes</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="mathTypedAnswer">Typed answer</label>
+              <input id="mathTypedAnswer" type="text" placeholder="Type answer" autocomplete="off" />
+            </div>
+            <button class="secondary-button" id="mathSubmitButton" type="button">Submit typed</button>
+          </section>
+
+          <section class="round-summary" aria-label="Math challenge summary">
+            <div>
+              <span>Score</span>
+              <strong id="mathScore">0</strong>
+            </div>
+            <div>
+              <span>Correct / Wrong</span>
+              <strong id="mathAccuracy">0 / 0</strong>
+            </div>
+            <div>
+              <span>Speed</span>
+              <strong id="mathSpeed">-</strong>
+            </div>
+          </section>
+
+          <div class="message-line" id="mathMessage" role="status"></div>
+
+          <section class="practice-grid">
+            <article class="question-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Question</p>
+                <strong id="mathTimer">60s</strong>
+              </div>
+              <div class="question-body">
+                <div class="question-text" id="mathQuestionText">Press Start to begin.</div>
+                <div class="choice-grid" id="mathChoices"></div>
+              </div>
+            </article>
+
+            <article class="review-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Review</p>
+                <strong id="mathLeaderboardPoints">0 pts</strong>
+              </div>
+              <div class="review-list" id="mathReview"></div>
+            </article>
+          </section>
+        </main>
+      </section>
+
+      <section class="game-view" id="fermiGame" data-game-view="fermi">
+        <main class="table-surface practice-surface" aria-labelledby="fermiTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="fermiPhaseLabel">Ready</p>
+              <h2 id="fermiTitle">Estimate the answer without being off by orders of magnitude</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="fermiResetButton" type="button">Reset</button>
+              <button class="primary-button" id="fermiNextButton" type="button">Start</button>
+            </div>
+          </div>
+
+          <section class="control-band practice-controls" aria-label="Fermi question controls">
+            <div class="control-row">
+              <label for="fermiRounds">Rounds</label>
+              <select id="fermiRounds">
+                <option value="5" selected>5 questions</option>
+                <option value="8">8 questions</option>
+                <option value="10">10 questions</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="fermiTime">Time per question</label>
+              <select id="fermiTime">
+                <option value="30" selected>30 seconds</option>
+                <option value="45">45 seconds</option>
+                <option value="60">60 seconds</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="fermiAnswer">Numeric estimate</label>
+              <input id="fermiAnswer" type="text" placeholder="Example: 500000" autocomplete="off" />
+            </div>
+            <button class="secondary-button" id="fermiSubmitButton" type="button">Submit</button>
+          </section>
+
+          <section class="round-summary" aria-label="Fermi challenge summary">
+            <div>
+              <span>Total score</span>
+              <strong id="fermiScore">0</strong>
+            </div>
+            <div>
+              <span>Round</span>
+              <strong id="fermiRound">0 / 5</strong>
+            </div>
+            <div>
+              <span>Last factor</span>
+              <strong id="fermiFactor">-</strong>
+            </div>
+          </section>
+
+          <div class="message-line" id="fermiMessage" role="status"></div>
+
+          <section class="practice-grid">
+            <article class="question-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Question</p>
+                <strong id="fermiTimer">30s</strong>
+              </div>
+              <div class="question-body">
+                <div class="question-text fermi-question-text" id="fermiQuestionText">Press Start to begin.</div>
+                <div class="fermi-bots" id="fermiBotStatus"></div>
+              </div>
+            </article>
+
+            <article class="review-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Explanation</p>
+                <strong id="fermiLeaderboardPoints">0 pts</strong>
+              </div>
+              <div class="review-list" id="fermiReview"></div>
+            </article>
+          </section>
+        </main>
+      </section>
+
+      <section class="game-view" id="fruitGame" data-game-view="fruit">
+        <main class="table-surface practice-surface" aria-labelledby="fruitTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="fruitPhaseLabel">Ready</p>
+              <h2 id="fruitTitle">Trade the fruit-bag bid/ask market</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="fruitResetButton" type="button">Reset</button>
+              <button class="secondary-button" id="fruitTickButton" type="button">Next market</button>
+              <button class="primary-button" id="fruitStartButton" type="button">Start</button>
+            </div>
+          </div>
+
+          <section class="control-band practice-controls" aria-label="Fruit market controls">
+            <div class="control-row">
+              <label for="fruitDuration">Duration</label>
+              <select id="fruitDuration">
+                <option value="120" selected>120s practice</option>
+                <option value="300">5 minutes</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="fruitEvents">Market events</label>
+              <select id="fruitEvents">
+                <option value="off">Off</option>
+                <option value="on" selected>On</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label>Rule</label>
+              <input type="text" value="Total apples x total oranges" disabled />
+            </div>
+            <button class="secondary-button" id="fruitRevealButton" type="button">Reveal value</button>
+          </section>
+
+          <section class="round-summary" aria-label="Fruit market summary">
+            <div>
+              <span>Raw P&L</span>
+              <strong id="fruitProfit">0</strong>
+            </div>
+            <div>
+              <span>First click accuracy</span>
+              <strong id="fruitAccuracy">0 / 0</strong>
+            </div>
+            <div>
+              <span>Final score</span>
+              <strong id="fruitScore">0</strong>
+            </div>
+          </section>
+
+          <div class="message-line" id="fruitMessage" role="status"></div>
+
+          <section class="fruit-layout">
+            <article class="fruit-bags" aria-label="Fruit bags">
+              <div class="fruit-bag" id="fruitBagA"></div>
+              <div class="fruit-bag" id="fruitBagB"></div>
+            </article>
+
+            <article class="question-panel">
+              <div class="panel-heading">
+                <p class="eyebrow" id="fruitEventLabel">No event</p>
+                <strong id="fruitTimer">120s</strong>
+              </div>
+              <div class="fruit-market-card">
+                <div class="fruit-quote">
+                  <span>Bid</span>
+                  <strong id="fruitBid">0</strong>
+                </div>
+                <div class="fruit-quote">
+                  <span>Ask</span>
+                  <strong id="fruitAsk">0</strong>
+                </div>
+                <button class="sell-button" id="fruitSellButton" type="button">Sell</button>
+                <button class="buy-button" id="fruitBuyButton" type="button">Buy</button>
+              </div>
+              <p class="analysis-line" id="fruitUpdateLine">Next update in 0s.</p>
+            </article>
+          </section>
+
+          <section class="trade-tape" aria-labelledby="fruitTapeTitle">
+            <div class="panel-heading">
+              <p class="eyebrow" id="fruitTapeTitle">Trade tape</p>
+              <strong id="fruitValueLabel">Value hidden</strong>
+            </div>
+            <div id="fruitTape" class="tape-list"></div>
+          </section>
+        </main>
+      </section>
+
+      <section class="game-view" id="nextCardGame" data-game-view="next-card">
+        <main class="table-surface practice-surface" aria-labelledby="nextCardTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="nextCardPhaseLabel">Ready</p>
+              <h2 id="nextCardTitle">Predict whether the next card is higher or lower</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="nextCardResetButton" type="button">Reset</button>
+              <button class="primary-button" id="nextCardNextButton" type="button">Start</button>
+            </div>
+          </div>
+
+          <section class="control-band practice-controls" aria-label="Next card controls">
+            <div class="control-row">
+              <label for="nextCardSuits">Suits in deck</label>
+              <select id="nextCardSuits">
+                <option value="1">1 suit</option>
+                <option value="2">2 suits</option>
+                <option value="3">3 suits</option>
+                <option value="4" selected>4 suits</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="nextCardAce">Ace value</label>
+              <select id="nextCardAce">
+                <option value="high" selected>Ace high</option>
+                <option value="low">Ace low</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="nextCardStake">Stake</label>
+              <input id="nextCardStake" type="number" min="0" step="5" value="100" />
+            </div>
+            <button class="secondary-button" id="nextCardHalfKellyButton" type="button">Half bankroll</button>
+          </section>
+
+          <section class="round-summary" aria-label="Next card summary">
+            <div>
+              <span>Bankroll</span>
+              <strong id="nextCardBankroll">$1,000</strong>
+            </div>
+            <div>
+              <span>Round</span>
+              <strong id="nextCardRound">0 / 12</strong>
+            </div>
+            <div>
+              <span>Skill score</span>
+              <strong id="nextCardScore">0.0</strong>
+            </div>
+          </section>
+
+          <div class="message-line" id="nextCardMessage" role="status"></div>
+
+          <section class="card-betting-layout">
+            <article class="question-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Cards</p>
+                <strong id="nextCardDeckCount">0 left</strong>
+              </div>
+              <div class="next-card-table">
+                <div>
+                  <span class="analysis-line">Current card</span>
+                  <div id="nextCardCurrent" class="asset-row cards"></div>
+                </div>
+                <div>
+                  <span class="analysis-line">Next card</span>
+                  <div id="nextCardReveal" class="asset-row cards"></div>
+                </div>
+              </div>
+              <div class="next-card-actions">
+                <button class="buy-button" id="nextCardHigherButton" type="button">Higher</button>
+                <button class="sell-button" id="nextCardLowerButton" type="button">Lower</button>
+              </div>
+            </article>
+
+            <article class="review-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Card counting</p>
+                <strong id="nextCardBonus">+3 max</strong>
+              </div>
+              <div class="played-cards" id="nextCardPlayed"></div>
+              <div class="review-list" id="nextCardReview"></div>
+            </article>
+          </section>
+        </main>
+      </section>
+
+      <section class="game-view" id="makeMarketGame" data-game-view="make-market">
+        <main class="table-surface practice-surface" aria-labelledby="makeMarketTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="makeMarketPhaseLabel">Confidence interval</p>
+              <h2 id="makeMarketTitle">Quote bid-ask markets around an unknown answer</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="makeMarketResetButton" type="button">Reset</button>
+              <button class="primary-button" id="makeMarketNextButton" type="button">Next</button>
+            </div>
+          </div>
+
+          <section class="control-band practice-controls" aria-label="Make me a market controls">
+            <div class="control-row">
+              <label for="makeMarketSpread">Spread rule</label>
+              <select id="makeMarketSpread">
+                <option value="fixed">Fixed nice spread</option>
+                <option value="0.05">5% of bid</option>
+                <option value="0.10" selected>10% of bid</option>
+                <option value="0.20">20% of bid</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="makeMarketBid">Bid</label>
+              <input id="makeMarketBid" type="number" step="1" value="50" />
+            </div>
+            <div class="control-row">
+              <label for="makeMarketAsk">Ask</label>
+              <input id="makeMarketAsk" type="number" step="1" value="300" />
+            </div>
+            <button class="secondary-button" id="makeMarketSubmitButton" type="button">Submit quote</button>
+          </section>
+
+          <section class="round-summary" aria-label="Make me a market summary">
+            <div>
+              <span>Position</span>
+              <strong id="makeMarketPosition">0</strong>
+            </div>
+            <div>
+              <span>Cash</span>
+              <strong id="makeMarketCash">0</strong>
+            </div>
+            <div>
+              <span>Quiz score</span>
+              <strong id="makeMarketScore">0.0</strong>
+            </div>
+          </section>
+
+          <div class="message-line" id="makeMarketMessage" role="status"></div>
+
+          <section class="practice-grid">
+            <article class="question-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Question</p>
+                <strong id="makeMarketRound">Round 0</strong>
+              </div>
+              <div class="question-body">
+                <div class="question-text fermi-question-text" id="makeMarketQuestion">How many countries are UN member states?</div>
+                <label class="toggle-row">
+                  <input id="makeMarketHideHistory" type="checkbox" />
+                  <span>Hide trade history for higher quiz points</span>
+                </label>
+              </div>
+            </article>
+
+            <article class="review-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Trades and quiz</p>
+                <strong id="makeMarketAnswerStatus">Answer hidden</strong>
+              </div>
+              <div class="review-list" id="makeMarketReview"></div>
+            </article>
+          </section>
+        </main>
+      </section>
+
+      <section class="game-view" id="cardsMarketGame" data-game-view="cards-market">
+        <main class="table-surface practice-surface" aria-labelledby="cardsMarketTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="cardsMarketPhaseLabel">Ready phase</p>
+              <h2 id="cardsMarketTitle">Make and trade markets on hidden card value</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="cardsMarketResetButton" type="button">Reset</button>
+              <button class="primary-button" id="cardsMarketNextButton" type="button">Start</button>
+            </div>
+          </div>
+
+          <section class="control-band practice-controls" aria-label="Market of Cards controls">
+            <div class="control-row">
+              <label for="cardsMarketAce">Ace rule</label>
+              <select id="cardsMarketAce">
+                <option value="high" selected>Ace high by color</option>
+                <option value="low">Ace low at +10</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="cardsMarketBid">Bid</label>
+              <input id="cardsMarketBid" type="number" step="5" value="300" />
+            </div>
+            <div class="control-row">
+              <label for="cardsMarketAsk">Ask</label>
+              <input id="cardsMarketAsk" type="number" step="5" value="380" />
+            </div>
+            <button class="secondary-button" id="cardsMarketQuoteButton" type="button">Submit quote</button>
+          </section>
+
+          <section class="round-summary" aria-label="Market of Cards summary">
+            <div>
+              <span>Position</span>
+              <strong id="cardsMarketPosition">0</strong>
+            </div>
+            <div>
+              <span>Cash</span>
+              <strong id="cardsMarketCash">0</strong>
+            </div>
+            <div>
+              <span>Projected P&L</span>
+              <strong id="cardsMarketPnl">0</strong>
+            </div>
+          </section>
+
+          <div class="message-line" id="cardsMarketMessage" role="status"></div>
+
+          <section class="cards-market-layout">
+            <article class="question-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Center cards</p>
+                <strong id="cardsMarketRound">Round 0</strong>
+              </div>
+              <div class="cards-market-table">
+                <div class="asset-row cards" id="cardsMarketCenter"></div>
+                <div>
+                  <p class="analysis-line">Your hand</p>
+                  <div class="asset-row cards" id="cardsMarketHand"></div>
+                </div>
+                <div class="cards-player-grid" id="cardsMarketPlayers"></div>
+              </div>
+            </article>
+
+            <article class="review-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Quote / response</p>
+                <strong id="cardsMarketFinalValue">Final hidden</strong>
+              </div>
+              <div class="cards-response-panel" id="cardsMarketResponse"></div>
+              <div class="review-list" id="cardsMarketTape"></div>
+            </article>
           </section>
         </main>
       </section>
