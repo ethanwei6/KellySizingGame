@@ -248,6 +248,9 @@ const ETF_PRODUCTS = [
 const SEQUENCE_SETTINGS = {
   easy: {
     length: [5, 6],
+    startPreviewMs: 1800,
+    minPreviewMs: 700,
+    maxPreviewMs: 2600,
     startMs: 4200,
     minMs: 1500,
     maxMs: 5200,
@@ -255,6 +258,9 @@ const SEQUENCE_SETTINGS = {
   },
   medium: {
     length: [6, 8],
+    startPreviewMs: 1450,
+    minPreviewMs: 500,
+    maxPreviewMs: 2200,
     startMs: 3200,
     minMs: 950,
     maxMs: 4400,
@@ -262,6 +268,9 @@ const SEQUENCE_SETTINGS = {
   },
   hard: {
     length: [7, 9],
+    startPreviewMs: 1100,
+    minPreviewMs: 350,
+    maxPreviewMs: 1800,
     startMs: 2400,
     minMs: 650,
     maxMs: 3600,
@@ -2333,6 +2342,8 @@ function createSequenceState(phase) {
     rounds: Number(sequenceEls.rounds.value),
     questionIndex: 0,
     current: null,
+    questionPhase: "idle",
+    previewMs: settings.startPreviewMs,
     timeLimitMs: settings.startMs,
     deadline: null,
     timerId: null,
@@ -2364,8 +2375,9 @@ function beginSequenceQuestion() {
   }
 
   sequenceState.current = generateSequenceQuestion(sequenceState.difficulty);
-  sequenceState.deadline = Date.now() + sequenceState.timeLimitMs;
-  sequenceState.accepting = true;
+  sequenceState.questionPhase = "preview";
+  sequenceState.deadline = Date.now() + sequenceState.previewMs;
+  sequenceState.accepting = false;
   startSequenceTimer();
   renderSequence();
 }
@@ -2391,14 +2403,36 @@ function tickSequenceClock() {
   if (!sequenceState || sequenceState.phase !== "playing" || !sequenceState.current) return;
   const remainingMs = getSequenceRemainingMs();
   if (remainingMs <= 0) {
+    if (sequenceState.questionPhase === "preview") {
+      revealSequenceOptions();
+      return;
+    }
     recordSequenceAnswer(null, "timeout");
     return;
   }
   sequenceEls.timer.textContent = formatSequenceSeconds(remainingMs);
+  if (activeGame === "sequence") {
+    els.clockValue.textContent = formatSequenceSeconds(remainingMs);
+  }
+}
+
+function revealSequenceOptions() {
+  if (!sequenceState || sequenceState.phase !== "playing" || !sequenceState.current) return;
+  sequenceState.questionPhase = "answering";
+  sequenceState.deadline = Date.now() + sequenceState.timeLimitMs;
+  sequenceState.accepting = true;
+  renderSequence();
 }
 
 function recordSequenceAnswer(optionIndex, reason = "selected") {
-  if (!sequenceState || sequenceState.phase !== "playing" || !sequenceState.accepting) return;
+  if (
+    !sequenceState ||
+    sequenceState.phase !== "playing" ||
+    !sequenceState.accepting ||
+    sequenceState.questionPhase !== "answering"
+  ) {
+    return;
+  }
   sequenceState.accepting = false;
   stopSequenceTimer(false);
 
@@ -2424,6 +2458,7 @@ function recordSequenceAnswer(optionIndex, reason = "selected") {
     selected,
     correct,
     reason,
+    previewMs: sequenceState.previewMs,
     timeLimitMs: sequenceState.timeLimitMs,
     elapsedMs,
   });
@@ -2439,15 +2474,22 @@ function recordSequenceAnswer(optionIndex, reason = "selected") {
 }
 
 function adjustSequencePace(correct) {
-  const { minMs, maxMs } = sequenceState.settings;
+  const { minMs, maxMs, minPreviewMs, maxPreviewMs } = sequenceState.settings;
   if (correct) {
-    const multiplier = sequenceState.correctStreak > 0 && sequenceState.correctStreak % 5 === 0 ? 0.78 : 0.94;
-    sequenceState.timeLimitMs = clamp(Math.round(sequenceState.timeLimitMs * multiplier), minMs, maxMs);
+    const solveMultiplier = sequenceState.correctStreak > 0 && sequenceState.correctStreak % 5 === 0 ? 0.78 : 0.94;
+    const previewMultiplier = sequenceState.correctStreak > 0 && sequenceState.correctStreak % 5 === 0 ? 0.84 : 0.96;
+    sequenceState.timeLimitMs = clamp(Math.round(sequenceState.timeLimitMs * solveMultiplier), minMs, maxMs);
+    sequenceState.previewMs = clamp(
+      Math.round(sequenceState.previewMs * previewMultiplier),
+      minPreviewMs,
+      maxPreviewMs,
+    );
     return;
   }
 
   if (sequenceState.wrongStreak >= 2) {
     sequenceState.timeLimitMs = clamp(Math.round(sequenceState.timeLimitMs * 1.16), minMs, maxMs);
+    sequenceState.previewMs = clamp(Math.round(sequenceState.previewMs * 1.12), minPreviewMs, maxPreviewMs);
   }
 }
 
@@ -2455,6 +2497,7 @@ function finishSequenceGame() {
   if (!sequenceState) return;
   stopSequenceTimer(false);
   sequenceState.phase = "finished";
+  sequenceState.questionPhase = "idle";
   sequenceState.current = null;
   sequenceState.accepting = false;
   renderSequence();
@@ -2530,6 +2573,10 @@ function formatSequenceSeconds(ms) {
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
+function maskSequenceTarget(target) {
+  return "•".repeat(target.length);
+}
+
 function getSequenceAccuracy() {
   if (!sequenceState?.history.length) return 0;
   return sequenceState.correct / sequenceState.history.length;
@@ -2555,14 +2602,18 @@ function renderSequence() {
 
   sequenceEls.phaseLabel.textContent = getSequencePhaseLabel();
   sequenceEls.startButton.textContent = sequenceState.phase === "playing" ? "Finish" : "Start";
-  sequenceEls.skipButton.disabled = sequenceState.phase !== "playing";
+  sequenceEls.skipButton.disabled = sequenceState.phase !== "playing" || sequenceState.questionPhase !== "answering";
   sequenceEls.difficulty.disabled = sequenceState.phase === "playing";
   sequenceEls.rounds.disabled = sequenceState.phase === "playing";
   sequenceEls.correct.textContent =
     sequenceState.phase === "finished" ? `${sequenceState.correct} / ${sequenceState.history.length}` : "Hidden";
   sequenceEls.round.textContent = `${Math.min(sequenceState.questionIndex + (sequenceState.phase === "playing" ? 1 : 0), sequenceState.rounds)} / ${sequenceState.rounds}`;
-  sequenceEls.pace.textContent = formatSequenceSeconds(sequenceState.timeLimitMs);
+  sequenceEls.pace.textContent = `${formatSequenceSeconds(sequenceState.previewMs)} / ${formatSequenceSeconds(sequenceState.timeLimitMs)}`;
   sequenceEls.score.textContent = sequenceState.phase === "finished" ? `${getSequenceScore()} pts` : "Hidden";
+  sequenceEls.target.classList.toggle(
+    "is-hidden-target",
+    sequenceState.phase === "playing" && sequenceState.questionPhase === "answering",
+  );
 
   if (sequenceState.phase === "ready") {
     sequenceEls.timer.textContent = "Ready";
@@ -2575,18 +2626,21 @@ function renderSequence() {
     sequenceEls.options.innerHTML = "";
     sequenceEls.message.textContent = "Results are now available in the session review.";
   } else {
-    sequenceEls.timer.textContent = formatSequenceSeconds(getSequenceRemainingMs());
-    sequenceEls.target.textContent = sequenceState.current.target;
+    const isPreview = sequenceState.questionPhase === "preview";
+    sequenceEls.timer.textContent = `${isPreview ? "Memorize " : "Choose "}${formatSequenceSeconds(getSequenceRemainingMs())}`;
+    sequenceEls.target.textContent = isPreview ? sequenceState.current.target : maskSequenceTarget(sequenceState.current.target);
     sequenceEls.message.textContent = "";
-    sequenceEls.options.innerHTML = sequenceState.current.options
-      .map(
-        (option, index) => `
-          <button class="sequence-option" type="button" data-sequence-option="${index}">
-            ${option}
-          </button>
-        `,
-      )
-      .join("");
+    sequenceEls.options.innerHTML = isPreview
+      ? `<div class="sequence-waiting">Options appear after the target hides.</div>`
+      : sequenceState.current.options
+          .map(
+            (option, index) => `
+              <button class="sequence-option" type="button" data-sequence-option="${index}">
+                ${option}
+              </button>
+            `,
+          )
+          .join("");
   }
 
   renderSequenceStats();
@@ -2594,6 +2648,7 @@ function renderSequence() {
 }
 
 function getSequencePhaseLabel() {
+  if (sequenceState.phase === "playing" && sequenceState.questionPhase === "preview") return "Memorize";
   if (sequenceState.phase === "playing") return "Timed match";
   if (sequenceState.phase === "finished") return "Review";
   return "Ready";
@@ -2602,12 +2657,12 @@ function getSequencePhaseLabel() {
 function renderSequenceStatus() {
   els.statusLabelOne.textContent = "Correct";
   els.statusLabelTwo.textContent = "Round";
-  els.statusLabelThree.textContent = "Streak";
+  els.statusLabelThree.textContent = "Preview / solve";
   els.statusLabelFour.textContent = "Clock";
   els.bankrollValue.textContent =
     sequenceState.phase === "finished" ? `${sequenceState.correct} / ${sequenceState.history.length}` : "Hidden";
   els.roundValue.textContent = `${Math.min(sequenceState.questionIndex + (sequenceState.phase === "playing" ? 1 : 0), sequenceState.rounds)} / ${sequenceState.rounds}`;
-  els.skillValue.textContent = sequenceState.phase === "finished" ? String(sequenceState.bestStreak) : "Hidden";
+  els.skillValue.textContent = `${formatSequenceSeconds(sequenceState.previewMs)} / ${formatSequenceSeconds(sequenceState.timeLimitMs)}`;
   els.clockValue.textContent =
     sequenceState.phase === "playing" ? formatSequenceSeconds(getSequenceRemainingMs()) : formatSequenceSeconds(sequenceState.timeLimitMs);
 }
@@ -2648,7 +2703,7 @@ function renderSequenceReview() {
       return `
         <div class="review-item ${className}">
           <strong>${item.round}. ${item.target}</strong>
-          <span>${item.correct ? "Correct" : "Wrong"}; chose ${submitted}; limit ${formatSequenceSeconds(item.timeLimitMs)}; answered in ${formatSequenceSeconds(item.elapsedMs)}</span>
+          <span>${item.correct ? "Correct" : "Wrong"}; chose ${submitted}; preview ${formatSequenceSeconds(item.previewMs)}; limit ${formatSequenceSeconds(item.timeLimitMs)}; answered in ${formatSequenceSeconds(item.elapsedMs)}</span>
         </div>
       `;
     })
