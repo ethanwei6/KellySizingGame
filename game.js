@@ -1,8 +1,16 @@
 const els = {
+  appEyebrow: document.querySelector("#appEyebrow"),
+  appTitle: document.querySelector("#appTitle"),
+  statusLabelOne: document.querySelector("#statusLabelOne"),
+  statusLabelTwo: document.querySelector("#statusLabelTwo"),
+  statusLabelThree: document.querySelector("#statusLabelThree"),
+  statusLabelFour: document.querySelector("#statusLabelFour"),
   bankrollValue: document.querySelector("#bankrollValue"),
   roundValue: document.querySelector("#roundValue"),
   skillValue: document.querySelector("#skillValue"),
   clockValue: document.querySelector("#clockValue"),
+  gameTabs: document.querySelectorAll("[data-game-tab]"),
+  gameViews: document.querySelectorAll("[data-game-view]"),
   phaseLabel: document.querySelector("#phaseLabel"),
   tableTitle: document.querySelector("#tableTitle"),
   submitButton: document.querySelector("#submitButton"),
@@ -26,6 +34,21 @@ const els = {
   clearReviewButton: document.querySelector("#clearReviewButton"),
 };
 
+const etfEls = {
+  phaseLabel: document.querySelector("#etfPhaseLabel"),
+  resetButton: document.querySelector("#etfResetButton"),
+  tickButton: document.querySelector("#etfTickButton"),
+  pauseButton: document.querySelector("#etfPauseButton"),
+  pnl: document.querySelector("#etfPnl"),
+  accuracy: document.querySelector("#etfAccuracy"),
+  lastUpdate: document.querySelector("#etfLastUpdate"),
+  message: document.querySelector("#etfMessage"),
+  stockTable: document.querySelector("#stockTable"),
+  board: document.querySelector("#etfBoard"),
+  tape: document.querySelector("#etfTape"),
+  score: document.querySelector("#etfScore"),
+};
+
 const ROUND_SECONDS = 60;
 const SUITS = ["hearts", "diamonds", "clubs", "spades"];
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
@@ -42,8 +65,28 @@ const QUOTE_MULTIPLIERS = {
   fair: [1],
 };
 const MAX_QUOTE_DEVIATION = 0.06;
+const ETF_SESSION_SECONDS = 120;
+const ETF_TRADE_SIZE = 100;
+const STOCK_HALF_SPREAD = 0.05;
+const ETF_HALF_SPREAD = 0.1;
+const ETF_STOCKS = [
+  ["ALP", "Alpha Motors", 24.4],
+  ["BEX", "Beacon Energy", 31.2],
+  ["CRN", "Crown Cloud", 18.8],
+  ["DEX", "Delta Foods", 27.6],
+  ["ELM", "Elm Health", 42.1],
+  ["FRO", "Frontier Robotics", 36.7],
+  ["GLO", "Globe Media", 21.9],
+];
+const ETF_PRODUCTS = [
+  { symbol: "TWO", name: "Two Stock ETF", constituents: ["ALP", "BEX"] },
+  { symbol: "TRI", name: "Three Stock ETF", constituents: ["CRN", "DEX", "ELM"] },
+  { symbol: "MIX", name: "Mixed Basket ETF", constituents: ["BEX", "FRO", "GLO", "ALP"] },
+];
 
 let state;
+let etfState;
+let activeGame = "probability";
 
 function freshState() {
   const rounds = Number(els.roundCount.value);
@@ -514,7 +557,12 @@ function render() {
 
 function renderStatus() {
   if (!state) return;
+  if (activeGame !== "probability") return;
   const parts = getScoreParts(state.totals);
+  els.statusLabelOne.textContent = "Bankroll";
+  els.statusLabelTwo.textContent = "Round";
+  els.statusLabelThree.textContent = "Score";
+  els.statusLabelFour.textContent = "Clock";
   els.bankrollValue.textContent = formatMoney(state.bankroll);
   els.roundValue.textContent = `${Math.min(state.round, state.totalRounds)} / ${state.totalRounds}`;
   els.skillValue.textContent = parts.total.toFixed(1);
@@ -949,6 +997,388 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function setActiveGame(game) {
+  activeGame = game;
+  els.gameTabs.forEach((tab) => {
+    tab.classList.toggle("is-active", tab.dataset.gameTab === game);
+  });
+  els.gameViews.forEach((view) => {
+    view.classList.toggle("is-active", view.dataset.gameView === game);
+  });
+
+  if (game === "probability") {
+    els.appEyebrow.textContent = "Kelly sizing practice";
+    els.appTitle.textContent = "Probability Betting";
+    stopEtfTimer();
+    renderStatus();
+    renderScore();
+    return;
+  }
+
+  els.appEyebrow.textContent = "ETF arbitrage practice";
+  els.appTitle.textContent = "ETF Challenge";
+  renderEtf();
+}
+
+function setupGameTabs() {
+  els.gameTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      setActiveGame(tab.dataset.gameTab);
+    });
+  });
+}
+
+function initEtfGame() {
+  stopEtfTimer();
+  etfState = createEtfState();
+  renderEtf();
+}
+
+function createEtfState() {
+  const stocks = Object.fromEntries(
+    ETF_STOCKS.map(([symbol, name, mid]) => [symbol, makeStock(symbol, name, mid)]),
+  );
+  const etfs = ETF_PRODUCTS.map((product) => makeEtf(product, stocks));
+
+  return {
+    stocks,
+    etfs,
+    running: false,
+    timeLeft: ETF_SESSION_SECONDS,
+    timerId: null,
+    pnl: 0,
+    newsPnl: 0,
+    normalPnl: 0,
+    trades: 0,
+    profitableTrades: 0,
+    lastUpdate: "Setup",
+    lastUpdateType: "normal",
+    tape: [],
+  };
+}
+
+function makeStock(symbol, name, mid) {
+  return quoteStock({
+    symbol,
+    name,
+    mid,
+    flash: "",
+  });
+}
+
+function makeEtf(product, stocks) {
+  const mid = product.constituents.reduce((sum, symbol) => sum + stocks[symbol].mid, 0);
+  return quoteEtf({
+    ...product,
+    mid,
+    flash: "",
+  });
+}
+
+function quoteStock(stock) {
+  stock.mid = roundCents(Math.max(1, stock.mid));
+  stock.bid = roundCents(stock.mid - STOCK_HALF_SPREAD);
+  stock.ask = roundCents(stock.mid + STOCK_HALF_SPREAD);
+  return stock;
+}
+
+function quoteEtf(etf) {
+  etf.mid = roundCents(Math.max(1, etf.mid));
+  etf.bid = roundCents(etf.mid - ETF_HALF_SPREAD);
+  etf.ask = roundCents(etf.mid + ETF_HALF_SPREAD);
+  return etf;
+}
+
+function toggleEtfTimer() {
+  if (!etfState) return;
+  etfState.running = !etfState.running;
+  if (etfState.running) {
+    startEtfTimer();
+  } else {
+    stopEtfTimer();
+  }
+  renderEtf();
+}
+
+function startEtfTimer() {
+  if (!etfState || etfState.timerId || etfState.timeLeft <= 0) return;
+  etfState.timerId = window.setInterval(() => {
+    runEtfTick();
+  }, 1500);
+}
+
+function stopEtfTimer() {
+  if (etfState?.timerId) {
+    window.clearInterval(etfState.timerId);
+    etfState.timerId = null;
+  }
+}
+
+function runEtfTick() {
+  if (!etfState || etfState.timeLeft <= 0) {
+    stopEtfTimer();
+    if (etfState) etfState.running = false;
+    renderEtf();
+    return;
+  }
+
+  clearEtfFlashes();
+  const isNews = Math.random() < 0.22;
+  etfState.lastUpdateType = isNews ? "news" : "normal";
+
+  if (isNews) {
+    const stock = sample(Object.values(etfState.stocks));
+    const move = sample([-0.55, -0.4, 0.4, 0.55]);
+    moveStock(stock.symbol, move);
+    etfState.lastUpdate = `News: ${stock.symbol} ${move > 0 ? "up" : "down"}`;
+  } else {
+    const moves = randomInt(2, 4);
+    for (let i = 0; i < moves; i += 1) {
+      if (Math.random() < 0.65) {
+        const stock = sample(Object.values(etfState.stocks));
+        moveStock(stock.symbol, sample([-0.2, -0.1, 0.1, 0.2]));
+      } else {
+        const etf = sample(etfState.etfs);
+        moveEtf(etf.symbol, sample([-0.25, -0.15, 0.15, 0.25]));
+      }
+    }
+    etfState.lastUpdate = "Normal quote update";
+  }
+
+  if (Math.random() < 0.48) {
+    injectEtfOpportunity(isNews ? "news" : "normal");
+  }
+
+  etfState.timeLeft -= 1;
+  if (etfState.timeLeft <= 0) {
+    etfState.running = false;
+    stopEtfTimer();
+    etfState.lastUpdate = "Session complete";
+  }
+
+  renderEtf();
+}
+
+function clearEtfFlashes() {
+  Object.values(etfState.stocks).forEach((stock) => {
+    stock.flash = "";
+  });
+  etfState.etfs.forEach((etf) => {
+    etf.flash = "";
+  });
+}
+
+function moveStock(symbol, move) {
+  const stock = etfState.stocks[symbol];
+  stock.mid = roundCents(stock.mid + move);
+  stock.flash = move >= 0 ? "up" : "down";
+  quoteStock(stock);
+}
+
+function moveEtf(symbol, move) {
+  const etf = getEtf(symbol);
+  etf.mid = roundCents(etf.mid + move);
+  etf.flash = move >= 0 ? "up" : "down";
+  quoteEtf(etf);
+}
+
+function injectEtfOpportunity(type) {
+  const etf = sample(etfState.etfs);
+  const side = sample(["buy", "sell"]);
+  const arb = calculateEtfArb(etf);
+  const edge = sample([0.12, 0.16, 0.22, 0.28, 0.34]);
+
+  if (side === "buy") {
+    etf.mid = roundCents(Math.max(1, arb.stockBidSum - edge - ETF_HALF_SPREAD));
+    etf.flash = "down";
+    etfState.lastUpdate = `${type === "news" ? "News" : "Normal"} dislocation in ${etf.symbol}`;
+  } else {
+    etf.mid = roundCents(arb.stockAskSum + edge + ETF_HALF_SPREAD);
+    etf.flash = "up";
+    etfState.lastUpdate = `${type === "news" ? "News" : "Normal"} dislocation in ${etf.symbol}`;
+  }
+
+  quoteEtf(etf);
+}
+
+function executeEtfTrade(symbol, side) {
+  if (!etfState || etfState.timeLeft <= 0) return;
+  const etf = getEtf(symbol);
+  const arb = calculateEtfArb(etf);
+  const edge = side === "buy" ? arb.buyEdge : arb.sellEdge;
+  const pnl = roundCents(edge * ETF_TRADE_SIZE);
+  const profitable = pnl > 0;
+
+  etfState.pnl = roundCents(etfState.pnl + pnl);
+  etfState.trades += 1;
+  if (profitable) etfState.profitableTrades += 1;
+  if (etfState.lastUpdateType === "news") {
+    etfState.newsPnl = roundCents(etfState.newsPnl + pnl);
+  } else {
+    etfState.normalPnl = roundCents(etfState.normalPnl + pnl);
+  }
+
+  etfState.tape.unshift({
+    text: `${side === "buy" ? "Buy" : "Sell"} ${etf.symbol}`,
+    detail:
+      side === "buy"
+        ? `Sold basket at bids, bought ETF at ask`
+        : `Sold ETF at bid, bought basket at asks`,
+    pnl,
+    edge,
+    type: etfState.lastUpdateType,
+  });
+  etfState.tape = etfState.tape.slice(0, 12);
+  etfState.lastUpdate = `${profitable ? "Profitable" : "Losing"} ${etf.symbol} trade`;
+
+  resetConstituentStocks(etf);
+  renderEtf();
+}
+
+function resetConstituentStocks(etf) {
+  const currentSum = etf.constituents.reduce((sum, symbol) => sum + etfState.stocks[symbol].mid, 0);
+  const factor = etf.mid / currentSum;
+  etf.constituents.forEach((symbol) => {
+    const stock = etfState.stocks[symbol];
+    const nextMid = roundCents(stock.mid * factor);
+    stock.flash = nextMid >= stock.mid ? "up" : "down";
+    stock.mid = nextMid;
+    quoteStock(stock);
+  });
+}
+
+function calculateEtfArb(etf) {
+  const stockBidSum = roundCents(
+    etf.constituents.reduce((sum, symbol) => sum + etfState.stocks[symbol].bid, 0),
+  );
+  const stockAskSum = roundCents(
+    etf.constituents.reduce((sum, symbol) => sum + etfState.stocks[symbol].ask, 0),
+  );
+  return {
+    stockBidSum,
+    stockAskSum,
+    buyEdge: roundCents(stockBidSum - etf.ask),
+    sellEdge: roundCents(etf.bid - stockAskSum),
+  };
+}
+
+function renderEtf() {
+  if (!etfState) return;
+  if (activeGame === "etf") renderEtfStatus();
+  etfEls.phaseLabel.textContent = etfState.running ? "Live pricing phase" : "Paused practice";
+  etfEls.pauseButton.textContent = etfState.running ? "Pause" : "Start";
+  etfEls.pnl.textContent = formatCash(etfState.pnl);
+  etfEls.pnl.style.color = etfState.pnl >= 0 ? "var(--green)" : "var(--red)";
+  etfEls.accuracy.textContent = `${etfState.profitableTrades} / ${etfState.trades}`;
+  etfEls.lastUpdate.textContent = etfState.lastUpdate;
+  etfEls.score.textContent = `Score ${getEtfScore().toFixed(1)}`;
+  etfEls.stockTable.innerHTML = renderStockRows();
+  etfEls.board.innerHTML = etfState.etfs.map(renderEtfCard).join("");
+  etfEls.tape.innerHTML = renderEtfTape();
+}
+
+function renderEtfStatus() {
+  els.statusLabelOne.textContent = "Total P&L";
+  els.statusLabelTwo.textContent = "Time";
+  els.statusLabelThree.textContent = "Accuracy";
+  els.statusLabelFour.textContent = "Trades";
+  els.bankrollValue.textContent = formatCash(etfState.pnl);
+  els.roundValue.textContent = `${etfState.timeLeft}s`;
+  els.skillValue.textContent = etfState.trades
+    ? `${Math.round((etfState.profitableTrades / etfState.trades) * 100)}%`
+    : "0%";
+  els.clockValue.textContent = String(etfState.trades);
+}
+
+function renderStockRows() {
+  return Object.values(etfState.stocks)
+    .map(
+      (stock) => `
+        <div class="stock-row">
+          <div class="stock-symbol">
+            <strong>${stock.symbol}</strong>
+            <span>${stock.name}</span>
+          </div>
+          <div class="quote-cell ${stock.flash ? `flash-${stock.flash}` : ""}">${formatPrice(stock.bid)}</div>
+          <div class="quote-cell ${stock.flash ? `flash-${stock.flash}` : ""}">${formatPrice(stock.ask)}</div>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+function renderEtfCard(etf) {
+  const disabled = etfState.timeLeft <= 0 ? "disabled" : "";
+  return `
+    <article class="etf-card">
+      <div>
+        <p class="eyebrow">${etf.name}</p>
+        <h3>${etf.symbol}</h3>
+      </div>
+      <div class="etf-composition">
+        ${etf.constituents.map((symbol) => `<span class="ticker-chip">${symbol}</span>`).join("")}
+      </div>
+      <div class="etf-quote-grid">
+        <div class="${etf.flash ? `flash-${etf.flash}` : ""}">
+          <span>ETF bid</span>
+          <strong>${formatPrice(etf.bid)}</strong>
+        </div>
+        <div class="${etf.flash ? `flash-${etf.flash}` : ""}">
+          <span>ETF ask</span>
+          <strong>${formatPrice(etf.ask)}</strong>
+        </div>
+      </div>
+      <div class="etf-actions">
+        <button class="buy-button" type="button" data-etf-trade="buy" data-etf-symbol="${etf.symbol}" ${disabled}>Buy ETF</button>
+        <button class="sell-button" type="button" data-etf-trade="sell" data-etf-symbol="${etf.symbol}" ${disabled}>Sell ETF</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderEtfTape() {
+  if (!etfState.tape.length) {
+    return `<div class="tape-item"><div><span>Waiting</span><strong>No trades yet</strong></div><div class="tape-pnl">$0.00</div></div>`;
+  }
+
+  return etfState.tape
+    .map(
+      (trade) => `
+        <div class="tape-item">
+          <div>
+            <span>${trade.type === "news" ? "News P&L" : "Normal P&L"} | Edge ${formatCash(trade.edge)}</span>
+            <strong>${trade.text}</strong>
+            <span>${trade.detail}</span>
+          </div>
+          <div class="tape-pnl ${trade.pnl >= 0 ? "positive" : "negative"}">${formatCash(trade.pnl)}</div>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+function getEtf(symbol) {
+  return etfState.etfs.find((etf) => etf.symbol === symbol);
+}
+
+function getEtfScore() {
+  const accuracy = etfState.trades ? etfState.profitableTrades / etfState.trades : 0;
+  return Math.max(0, etfState.pnl) * accuracy;
+}
+
+function formatPrice(value) {
+  return value.toFixed(2);
+}
+
+function formatCash(value) {
+  const sign = value < 0 ? "-" : "";
+  return `${sign}$${Math.abs(value).toFixed(2)}`;
+}
+
+function roundCents(value) {
+  return Math.round(value * 100) / 100;
+}
+
 els.submitButton.addEventListener("click", () => {
   if (state.phase === "betting") {
     submitRound();
@@ -986,4 +1416,17 @@ els.clearReviewButton.addEventListener("click", () => {
   els.reviewDrawer.classList.remove("is-open");
 });
 
+etfEls.resetButton.addEventListener("click", initEtfGame);
+etfEls.tickButton.addEventListener("click", runEtfTick);
+etfEls.pauseButton.addEventListener("click", toggleEtfTimer);
+
+etfEls.board.addEventListener("click", (event) => {
+  const tradeButton = event.target.closest("[data-etf-trade]");
+  if (!tradeButton) return;
+  executeEtfTrade(tradeButton.dataset.etfSymbol, tradeButton.dataset.etfTrade);
+});
+
+setupGameTabs();
 startGame();
+initEtfGame();
+setActiveGame("probability");

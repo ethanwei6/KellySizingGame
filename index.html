@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Probability Betting</title>
+    <title>Market Making Practice</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -16,31 +16,37 @@
             <span></span>
           </div>
           <div>
-            <p class="eyebrow">Kelly sizing practice</p>
-            <h1>Probability Betting</h1>
+            <p class="eyebrow" id="appEyebrow">Market making practice</p>
+            <h1 id="appTitle">Probability Betting</h1>
           </div>
         </div>
 
         <div class="status-strip" aria-live="polite">
           <div>
-            <span class="status-label">Bankroll</span>
+            <span class="status-label" id="statusLabelOne">Bankroll</span>
             <strong id="bankrollValue">$1,000</strong>
           </div>
           <div>
-            <span class="status-label">Round</span>
+            <span class="status-label" id="statusLabelTwo">Round</span>
             <strong id="roundValue">1 / 6</strong>
           </div>
           <div>
-            <span class="status-label">Score</span>
+            <span class="status-label" id="statusLabelThree">Score</span>
             <strong id="skillValue">0.0</strong>
           </div>
           <div>
-            <span class="status-label">Clock</span>
+            <span class="status-label" id="statusLabelFour">Clock</span>
             <strong id="clockValue">Practice</strong>
           </div>
         </div>
       </header>
 
+      <nav class="game-tabs" aria-label="Game selector">
+        <button class="game-tab is-active" type="button" data-game-tab="probability">Probability Betting</button>
+        <button class="game-tab" type="button" data-game-tab="etf">ETF Challenge</button>
+      </nav>
+
+      <section class="game-view is-active" id="probabilityGame" data-game-view="probability">
       <main class="table-surface" aria-labelledby="tableTitle">
         <div class="surface-head">
           <div>
@@ -124,6 +130,75 @@
           <button class="secondary-button" id="clearReviewButton" type="button">Hide review</button>
         </div>
         <div id="reviewContent" class="review-content"></div>
+      </section>
+      </section>
+
+      <section class="game-view" id="etfGame" data-game-view="etf">
+        <main class="table-surface etf-surface" aria-labelledby="etfTitle">
+          <div class="surface-head">
+            <div>
+              <p class="eyebrow" id="etfPhaseLabel">Live pricing phase</p>
+              <h2 id="etfTitle">Trade ETF and basket mispricings</h2>
+            </div>
+            <div class="round-controls">
+              <button class="secondary-button" id="etfResetButton" type="button">Reset</button>
+              <button class="secondary-button" id="etfTickButton" type="button">Next tick</button>
+              <button class="primary-button" id="etfPauseButton" type="button">Start</button>
+            </div>
+          </div>
+
+          <section class="round-summary etf-summary" aria-label="ETF challenge summary">
+            <div>
+              <span>Total P&L</span>
+              <strong id="etfPnl">$0</strong>
+            </div>
+            <div>
+              <span>Accuracy</span>
+              <strong id="etfAccuracy">0 / 0</strong>
+            </div>
+            <div>
+              <span>Last update</span>
+              <strong id="etfLastUpdate">Setup</strong>
+            </div>
+          </section>
+
+          <div class="message-line" id="etfMessage" role="status"></div>
+
+          <section class="etf-layout">
+            <section class="ticker-panel" aria-labelledby="stockTickerTitle">
+              <div class="panel-heading">
+                <p class="eyebrow" id="stockTickerTitle">Stocks</p>
+                <strong>Bid / Ask</strong>
+              </div>
+              <div class="stock-table" id="stockTable"></div>
+            </section>
+
+            <section class="etf-board" id="etfBoard" aria-label="ETF trading board"></section>
+          </section>
+
+          <section class="etf-reference" aria-label="ETF arbitrage rules">
+            <div>
+              <span>Buy ETF</span>
+              <strong>Stock bid sum &gt; ETF ask</strong>
+            </div>
+            <div>
+              <span>Sell ETF</span>
+              <strong>ETF bid &gt; stock ask sum</strong>
+            </div>
+            <div>
+              <span>Trade score</span>
+              <strong>P&L x accuracy</strong>
+            </div>
+          </section>
+
+          <section class="trade-tape" aria-labelledby="tradeTapeTitle">
+            <div class="panel-heading">
+              <p class="eyebrow" id="tradeTapeTitle">Trade tape</p>
+              <strong id="etfScore">Score 0.0</strong>
+            </div>
+            <div id="etfTape" class="tape-list"></div>
+          </section>
+        </main>
       </section>
     </div>
 
