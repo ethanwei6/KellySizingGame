@@ -2573,10 +2573,6 @@ function formatSequenceSeconds(ms) {
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
-function maskSequenceTarget(target) {
-  return "•".repeat(target.length);
-}
-
 function getSequenceAccuracy() {
   if (!sequenceState?.history.length) return 0;
   return sequenceState.correct / sequenceState.history.length;
@@ -2610,10 +2606,6 @@ function renderSequence() {
   sequenceEls.round.textContent = `${Math.min(sequenceState.questionIndex + (sequenceState.phase === "playing" ? 1 : 0), sequenceState.rounds)} / ${sequenceState.rounds}`;
   sequenceEls.pace.textContent = `${formatSequenceSeconds(sequenceState.previewMs)} / ${formatSequenceSeconds(sequenceState.timeLimitMs)}`;
   sequenceEls.score.textContent = sequenceState.phase === "finished" ? `${getSequenceScore()} pts` : "Hidden";
-  sequenceEls.target.classList.toggle(
-    "is-hidden-target",
-    sequenceState.phase === "playing" && sequenceState.questionPhase === "answering",
-  );
 
   if (sequenceState.phase === "ready") {
     sequenceEls.timer.textContent = "Ready";
@@ -2628,10 +2620,10 @@ function renderSequence() {
   } else {
     const isPreview = sequenceState.questionPhase === "preview";
     sequenceEls.timer.textContent = `${isPreview ? "Memorize " : "Choose "}${formatSequenceSeconds(getSequenceRemainingMs())}`;
-    sequenceEls.target.textContent = isPreview ? sequenceState.current.target : maskSequenceTarget(sequenceState.current.target);
+    sequenceEls.target.textContent = sequenceState.current.target;
     sequenceEls.message.textContent = "";
     sequenceEls.options.innerHTML = isPreview
-      ? `<div class="sequence-waiting">Options appear after the target hides.</div>`
+      ? `<div class="sequence-waiting">Options appear after the preview.</div>`
       : sequenceState.current.options
           .map(
             (option, index) => `

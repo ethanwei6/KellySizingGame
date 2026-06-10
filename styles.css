@@ -1087,12 +1087,6 @@ button {
   text-align: center;
 }
 
-.sequence-target.is-hidden-target {
-  background: var(--surface-soft);
-  color: var(--muted);
-  border-style: dashed;
-}
-
 .sequence-options {
   display: grid;
   gap: 8px;
